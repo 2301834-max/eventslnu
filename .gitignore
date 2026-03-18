@@ -1,0 +1,41 @@
+# --- System / IDE Files ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.history/
+*.log
+*.swp
+*.class
+
+# --- Flutter / Dart ---
+# Using **/ ensures it catches these folders even if they are inside 'flutter_frontend'
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/packages/
+.packages
+
+# --- Android Specific ---
+**/.gradle/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+
+# --- C++ / CMake (The stuff in your error log) ---
+**/*.ninja
+**/CMakeCache.txt
+**/CMakeFiles/
+**/cmake_install.cmake
+**/*.bin
+**/*.lock
+**/.cxx/
+
+# --- Environment Secrets ---
+.env*
+auth.json

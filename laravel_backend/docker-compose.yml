@@ -1,0 +1,116 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lnusystem_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./storage:/var/www/html/storage
+    depends_on:
+      - db
+      - redis
+    networks:
+      - lnusystem
+    environment:
+      - APP_ENV=local
+      - APP_KEY=base64:IvEcteooo4jwYudRNkE83NOL3k/wbPK3uQ4vGx5p0Dw=
+      - APP_DEBUG=true
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USERNAME=lnusystem
+      - DB_PASSWORD=lnusystem_password
+      - DB_DATABASE=lnusystem
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=file
+      - SESSION_DRIVER=file
+      - SESSION_LIFETIME=120
+      - SESSION_SECURE_COOKIE=false
+      - SESSION_HTTP_ONLY=true
+      - SESSION_SAME_SITE=lax
+      - CSRF_HEADER=X-CSRF-TOKEN
+    labels:
+      - "com.example.description=LNU System PHP Application"
+
+  # Nginx web server
+  nginx:
+    image: nginx:latest
+    container_name: lnusystem_nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_HTTP_PORT:-8000}:80"
+      - "${APP_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./storage/logs/nginx:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - lnusystem
+    labels:
+      - "com.example.description=LNU System Nginx Web Server"
+
+  # MySQL database
+  db:
+    image: mysql:8.0
+    container_name: lnusystem_db
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: lnusystem
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_PASSWORD: lnusystem_password
+      MYSQL_USER: lnusystem
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - lnusystem
+    labels:
+      - "com.example.description=LNU System MySQL Database"
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: lnusystem_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lnusystem
+    labels:
+      - "com.example.description=LNU System Redis Cache"
+
+  # Optional: Database management tool (Adminer)
+  adminer:
+    image: adminer:latest
+    container_name: lnusystem_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DESIGN: dracula
+    depends_on:
+      - db
+    networks:
+      - lnusystem
+    labels:
+      - "com.example.description=LNU System Database Manager"
+
+networks:
+  lnusystem:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local

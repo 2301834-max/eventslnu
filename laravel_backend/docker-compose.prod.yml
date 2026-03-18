@@ -1,0 +1,92 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lnusystem_app_prod
+    restart: always
+    working_dir: /var/www/html
+    volumes:
+      - app_storage:/var/www/html/storage
+      - ./bootstrap:/var/www/html/bootstrap:ro
+      - ./routes:/var/www/html/routes:ro
+      - ./app:/var/www/html/app:ro
+      - ./config:/var/www/html/config:ro
+      - ./resources:/var/www/html/resources:ro
+      - ./public:/var/www/html/public:ro
+    depends_on:
+      - db
+      - redis
+    networks:
+      - lnusystem_prod
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_HOST=db
+      - DB_PORT=3306
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:latest
+    container_name: lnusystem_nginx_prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - app_storage:/var/www/html/storage:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - lnusystem_prod
+
+  db:
+    image: mysql:8.0
+    container_name: lnusystem_db_prod
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data_prod:/var/lib/mysql
+    networks:
+      - lnusystem_prod
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+
+  redis:
+    image: redis:7-alpine
+    container_name: lnusystem_redis_prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - lnusystem_prod
+
+networks:
+  lnusystem_prod:
+    driver: bridge
+
+volumes:
+  db_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+  app_storage:
+    driver: local
+  nginx_logs:
+    driver: local
