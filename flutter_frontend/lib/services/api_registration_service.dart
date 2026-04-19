@@ -14,8 +14,16 @@ class ApiRegistrationService {
     return ApiRegistration.fromJson(data);
   }
 
-  Future<ApiRegistration> registerForEvent(int eventId) async {
-    final json = await _api.postJson('/api/events/$eventId/registrations', body: const {});
+  Future<ApiRegistration> registerForEvent(
+    int eventId, {
+    required String studentId,
+  }) async {
+    final json = await _api.postJson(
+      '/api/events/$eventId/registrations',
+      body: {
+        'student_id': studentId,
+      },
+    );
     final data = json['data'];
     if (data is! Map<String, dynamic>) {
       throw ApiException('Unexpected registration response.');
@@ -32,4 +40,3 @@ class ApiRegistrationService {
     );
   }
 }
-

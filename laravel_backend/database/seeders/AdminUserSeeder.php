@@ -13,23 +13,24 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
-        User::firstOrCreate(
+        // Keep a predictable admin account available for local login.
+        User::updateOrCreate(
             ['email' => 'admin@lnusystem.local'],
             [
-                'name' => 'Admin User',
+                'name' => 'LNU Administrator',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
+                'student_id' => null,
             ]
         );
 
-        // Create test user
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'user@lnusystem.local'],
             [
                 'name' => 'Test User',
                 'password' => Hash::make('password123'),
                 'role' => 'student',
+                'student_id' => 'LOCAL-0001',
             ]
         );
     }

@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AttendanceRecord;
 use App\Models\Event;
+use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -12,10 +14,13 @@ class EventViewApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_view_event_api_returns_full_event_details_and_register_next_action(): void
+    public function test_show_event_api_returns_event_details_and_statistics(): void
     {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create(['role' => 'student']);
+        $pendingStudent = User::factory()->create(['role' => 'student']);
+
+        Sanctum::actingAs($student);
 
         $event = Event::create([
             'title' => 'Campus Leadership Summit',
@@ -25,10 +30,33 @@ class EventViewApiTest extends TestCase
             'location' => 'Main Auditorium',
             'max_participants' => 200,
             'status' => 'published',
-            'created_by' => $user->id,
+            'created_by' => $admin->id,
         ]);
 
-        $response = $this->getJson("/api/events/{$event->id}/view");
+        $approvedRegistration = Registration::create([
+            'event_id' => $event->id,
+            'user_id' => $student->id,
+            'status' => 'approved',
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+        ]);
+
+        Registration::create([
+            'event_id' => $event->id,
+            'user_id' => $pendingStudent->id,
+            'status' => 'pending',
+        ]);
+
+        AttendanceRecord::create([
+            'registration_id' => $approvedRegistration->id,
+            'event_id' => $event->id,
+            'user_id' => $student->id,
+            'checked_in_at' => now(),
+            'qr_code_reference' => 'QR-LEADERSHIP-001',
+            'check_in_location' => 'Main Auditorium',
+        ]);
+
+        $response = $this->getJson("/api/events/{$event->id}");
 
         $response->assertOk()
             ->assertJson([
@@ -36,57 +64,50 @@ class EventViewApiTest extends TestCase
                 'data' => [
                     'id' => $event->id,
                     'title' => 'Campus Leadership Summit',
-                    'venue' => 'Main Auditorium',
                     'description' => 'Leadership workshop for students.',
+                    'location' => 'Main Auditorium',
                     'max_participants' => 200,
                 ],
-                'next_action' => [
-                    'can_register' => true,
-                    'method' => 'POST',
+                'statistics' => [
+                    'total_registrations' => 2,
+                    'approved_registrations' => 1,
+                    'pending_registrations' => 1,
+                    'total_attended' => 1,
+                    'is_registration_full' => false,
                 ],
             ])
-            ->assertJsonStructure([
-                'success',
-                'data' => [
-                    'id',
-                    'title',
-                    'date',
-                    'venue',
-                    'description',
-                    'capacity',
-                    'poster',
-                    'registration_deadline',
-                    'max_participants',
-                    'status',
-                    'available_slots',
-                ],
-                'next_action' => [
-                    'can_register',
-                    'endpoint',
-                    'method',
-                ],
-            ]);
+            ->assertJsonPath('statistics.attendance_rate', '100%');
     }
 
-    public function test_view_event_api_sets_can_register_false_for_draft_event(): void
+    public function test_show_event_api_marks_event_as_full_when_capacity_is_reached(): void
     {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create(['role' => 'student']);
+
+        Sanctum::actingAs($student);
 
         $event = Event::create([
-            'title' => 'Draft Event',
-            'description' => 'Not open yet.',
+            'title' => 'Limited Event',
+            'description' => 'Capacity is already full.',
             'start_date' => now()->addDays(5),
             'end_date' => now()->addDays(5)->addHours(2),
             'location' => 'Room 101',
-            'max_participants' => 50,
-            'status' => 'draft',
-            'created_by' => $user->id,
+            'max_participants' => 1,
+            'status' => 'published',
+            'created_by' => $admin->id,
         ]);
 
-        $response = $this->getJson("/api/events/{$event->id}/view");
+        Registration::create([
+            'event_id' => $event->id,
+            'user_id' => $student->id,
+            'status' => 'approved',
+            'approved_by' => $admin->id,
+            'approved_at' => now(),
+        ]);
+
+        $response = $this->getJson("/api/events/{$event->id}");
 
         $response->assertOk()
-            ->assertJsonPath('next_action.can_register', false);
+            ->assertJsonPath('statistics.is_registration_full', true);
     }
 }

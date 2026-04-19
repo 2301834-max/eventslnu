@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_event/api/models/api_event.dart';
 import 'package:flutter_smart_event/core/service_locator.dart';
 import 'package:flutter_smart_event/student_ui/event_detail_screen.dart';
-import 'package:flutter_smart_event/student_ui/login_screen.dart';
+import 'package:flutter_smart_event/student_ui/profile_screen.dart';
+import 'package:flutter_smart_event/student_ui/student_ui_helpers.dart';
+import 'package:flutter_smart_event/student_ui/student_widgets.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
@@ -31,9 +33,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
     try {
       final events = await ServiceLocator.instance.eventService.listEvents();
       if (!mounted) return;
-      setState(() {
-        _events = events;
-      });
+      setState(() => _events = events);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
@@ -46,78 +46,242 @@ class _EventsListScreenState extends State<EventsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Events'),
+        title: const Text('School Events'),
         actions: [
           IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              await ServiceLocator.instance.authService.logout();
-              if (!context.mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
-            },
-            icon: const Icon(Icons.logout),
+            onPressed: _loading ? null : _load,
+            icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+            icon: const Icon(Icons.person_outline_rounded),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? ListView(
-                    children: [
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  )
-                : _events.isEmpty
-                    ? ListView(
-                        children: const [
-                          SizedBox(height: 24),
-                          Center(child: Text('No events found.')),
-                        ],
+      body: StudentPageBackground(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const StudentHeaderCard(
+                kicker: 'Campus Calendar',
+                title: 'Explore upcoming and active LNU events.',
+                subtitle:
+                    'Each event now includes poster support, cleaner cards, and secure registration rules tied to your institutional account.',
+              ),
+              const SizedBox(height: 24),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: _loading
+                    ? const Padding(
+                        key: ValueKey('loading'),
+                        padding: EdgeInsets.only(top: 40),
+                        child: Center(child: CircularProgressIndicator()),
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _events.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final e = _events[index];
-                          final subtitle = [
-                            if (e.startDate != null) e.startDate!.toLocal().toString(),
-                            if (e.location.isNotEmpty) e.location,
-                          ].where((x) => x.isNotEmpty).join(' • ');
-
-                          return Card(
-                            child: ListTile(
-                              title: Text(e.title),
-                              subtitle: subtitle.isEmpty ? null : Text(subtitle),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => EventDetailScreen(event: e),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
+                    : _error != null
+                        ? _StateCard(
+                            key: const ValueKey('error'),
+                            title: 'Could not load events',
+                            subtitle: _error!,
+                            accent: StudentPalette.danger,
+                          )
+                        : _events.isEmpty
+                            ? const _StateCard(
+                                key: ValueKey('empty'),
+                                title: 'No events available',
+                                subtitle: 'There are no school events to show right now. Try refreshing again later.',
+                                accent: StudentPalette.warning,
+                              )
+                            : Column(
+                                key: const ValueKey('list'),
+                                children: _events
+                                    .map(
+                                      (event) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 16),
+                                        child: _EventCard(event: event),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
+class _EventCard extends StatelessWidget {
+  const _EventCard({required this.event});
+
+  final ApiEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = formatStatusLabel(event.status);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),
+        );
+      },
+      child: StudentSurfaceCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            EventPoster(
+              title: event.title,
+              imageUrl: event.eventImageUrl,
+              height: 180,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    event.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: StudentPalette.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: statusFillColor(event.status),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: statusTextColor(event.status),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              formatDateRange(event.startDate, event.endDate),
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: StudentPalette.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              event.location.isEmpty ? 'Location to be announced' : event.location,
+              style: const TextStyle(color: StudentPalette.textSecondary),
+            ),
+            if (event.description.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                event.description,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  height: 1.5,
+                  color: StudentPalette.textSecondary,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: event.isRegistrationOpen
+                        ? const Color(0xFFE6F7ED)
+                        : const Color(0xFFFFF4E5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    event.isRegistrationOpen ? 'Registration Open' : 'Registration Closed',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: event.isRegistrationOpen
+                          ? StudentPalette.success
+                          : StudentPalette.warning,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                const Text(
+                  'Open details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: StudentPalette.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: StudentPalette.primary,
+                  size: 18,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StateCard extends StatelessWidget {
+  const _StateCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+  });
+
+  final String title;
+  final String subtitle;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return StudentSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: accent,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: StudentPalette.textSecondary,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

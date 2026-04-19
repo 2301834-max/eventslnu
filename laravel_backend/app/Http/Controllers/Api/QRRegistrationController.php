@@ -20,10 +20,26 @@ class QRRegistrationController extends Controller
             'qr_code' => 'required|string',
         ]);
 
+        $user = $request->user();
+
+        if (!$user?->hasInstitutionalEmail()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only institutional @lnu.edu.ph accounts may register for events.',
+            ], 422);
+        }
+
+        if (!$user->student_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A student ID is required before using event registration QR codes.',
+            ], 422);
+        }
+
         $qr = QRCode::where('code', $validated['qr_code'])
-            ->where(function ($q) {
-                $q->where('type', 'event_registration')
-                  ->orWhereNull('type');
+            ->where(function ($query) {
+                $query->where('type', 'event_registration')
+                    ->orWhereNull('type');
             })
             ->first();
 
@@ -49,37 +65,56 @@ class QRRegistrationController extends Controller
             ], 404);
         }
 
-        // Allow registration only for events that are not draft/cancelled.
-        if (in_array($event->status, ['draft', 'cancelled'], true)) {
+        if (!$event->isOpenForRegistration()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Event is not open for registration.',
+                'message' => $event->hasRegistrationClosed()
+                    ? 'Event registration is already closed.'
+                    : 'Event is not open for registration.',
             ], 400);
         }
 
-        // Prevent duplicate registration, but allow re-entry if previously rejected/cancelled
-        // by reusing the same row instead of creating a new one (to satisfy unique index).
         $existing = Registration::where('event_id', $event->id)
-            ->where('user_id', auth()->id())
+            ->where('user_id', $user->id)
             ->latest()
             ->first();
 
+        $approverId = $event->created_by ?: $user->id;
+
         if ($existing) {
             if (!in_array($existing->status, ['rejected', 'cancelled'], true)) {
+                if ($existing->status === 'pending') {
+                    $existing->approve($approverId, 'Approved via QR scan');
+                    $this->generateAttendanceQrCode($existing);
+
+                    return response()->json([
+                        'success' => true,
+                        'already_registered' => false,
+                        'message' => 'Registration successful. Your attendance QR is ready.',
+                        'data' => $existing->load('event', 'user', 'qrCode', 'attendanceRecord'),
+                    ], 200);
+                }
+
+                if (!$existing->qrCode || !$existing->qrCode->isActive()) {
+                    $this->generateAttendanceQrCode($existing);
+                }
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'Already registered.',
-                    'data' => $existing->load('event', 'qrCode', 'attendanceRecord'),
+                    'already_registered' => true,
+                    'message' => 'You are already registered for this event.',
+                    'data' => $existing->load('event', 'user', 'qrCode', 'attendanceRecord'),
                 ]);
             }
 
-            // Re-activate existing registration
-            $existing->approve(auth()->id(), 'Re-approved via QR scan');
+            $existing->approve($approverId, 'Re-approved via QR scan');
+            $this->generateAttendanceQrCode($existing);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registration successful (re-activated).',
-                'data' => $existing->load('event', 'user'),
+                'already_registered' => false,
+                'message' => 'Registration successful. Your attendance QR is ready.',
+                'data' => $existing->load('event', 'user', 'qrCode', 'attendanceRecord'),
             ], 200);
         }
 
@@ -90,20 +125,37 @@ class QRRegistrationController extends Controller
             ], 400);
         }
 
-        // Instantly register AND approve (no rejection flow for QR) for first-time scan.
         $registration = Registration::create([
             'event_id' => $event->id,
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'status' => 'approved',
         ]);
 
-        $registration->approve(auth()->id(), 'Approved via QR scan');
+        $registration->approve($approverId, 'Approved via QR scan');
+        $this->generateAttendanceQrCode($registration);
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful.',
-            'data' => $registration->load('event', 'user'),
+            'already_registered' => false,
+            'message' => 'Registration successful. Your attendance QR is ready.',
+            'data' => $registration->load('event', 'user', 'qrCode', 'attendanceRecord'),
         ], 201);
     }
-}
 
+    private function generateAttendanceQrCode(Registration $registration): QRCode
+    {
+        QRCode::where('registration_id', $registration->id)->delete();
+
+        $code = 'QR-' . $registration->event_id . '-' . $registration->id . '-' . md5($registration->id . time());
+
+        return QRCode::create([
+            'registration_id' => $registration->id,
+            'event_id' => $registration->event_id,
+            'code' => $code,
+            'status' => 'active',
+            'type' => 'attendance',
+            'expires_at' => now()->addDays(30),
+            'qr_image_data' => json_encode(['type' => 'text', 'value' => $code]),
+        ]);
+    }
+}

@@ -13,6 +13,9 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    public const INSTITUTIONAL_EMAIL_DOMAIN = 'lnu.edu.ph';
+    public const INSTITUTIONAL_EMAIL_REGEX = '/^[A-Z0-9._%+-]+@lnu\.edu\.ph$/i';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -23,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'student_id',
     ];
 
     /**
@@ -80,5 +84,19 @@ class User extends Authenticatable
     public function isStudent(): bool
     {
         return $this->role === 'student';
+    }
+
+    public static function isInstitutionalEmail(?string $email): bool
+    {
+        if (!is_string($email) || $email === '') {
+            return false;
+        }
+
+        return preg_match(self::INSTITUTIONAL_EMAIL_REGEX, $email) === 1;
+    }
+
+    public function hasInstitutionalEmail(): bool
+    {
+        return self::isInstitutionalEmail($this->email);
     }
 }

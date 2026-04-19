@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminEventController;
+use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminStudentController;
 use App\Http\Controllers\AdminEventRegistrationQrController;
 use App\Http\Controllers\DebugController;
@@ -68,6 +69,11 @@ Route::get('/', function () {
         Route::put('/registrations/{registration}/approve', [AdminEventController::class, 'approveRegistration'])->name('registrations.approve');
         Route::put('/registrations/{registration}/reject', [AdminEventController::class, 'rejectRegistration'])->name('registrations.reject');
         Route::delete('/registrations/{registration}', [AdminEventController::class, 'destroyRegistration'])->name('registrations.destroy');
+
+        // Reports
+        Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export/pdf', [AdminReportController::class, 'exportPdf'])->name('reports.export.pdf');
+        Route::get('/reports/export/excel', [AdminReportController::class, 'exportExcel'])->name('reports.export.excel');
     });
 
     // Dashboard routes (for students) - Web-based authentication

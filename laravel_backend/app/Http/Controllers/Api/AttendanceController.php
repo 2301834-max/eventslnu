@@ -262,6 +262,21 @@ class AttendanceController extends Controller
                 continue;
             }
 
+            $alreadyCheckedIn = AttendanceRecord::where('registration_id', $qr->registration_id)
+                ->where('event_id', $event->id)
+                ->whereNull('checked_out_at')
+                ->exists();
+
+            if ($alreadyCheckedIn) {
+                $failed++;
+                $results[] = [
+                    'qr_code' => $qrCode,
+                    'status' => 'failed',
+                    'reason' => 'already_checked_in'
+                ];
+                continue;
+            }
+
             try {
                 AttendanceRecord::create([
                     'registration_id' => $qr->registration_id,

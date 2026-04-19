@@ -63,7 +63,20 @@
                         <tr>
                             <td><strong>{{ $event->title }}</strong></td>
                             <td>{{ $event->location }}</td>
-                            <td>{!! getStatusBadge($event->status) !!}</td>
+                            @php
+                                $badgeClass = match ($event->status) {
+                                    'approved' => 'success',
+                                    'pending' => 'warning',
+                                    'rejected' => 'danger',
+                                    'draft' => 'info',
+                                    'published' => 'info',
+                                    'ongoing' => 'success',
+                                    'completed' => 'success',
+                                    'cancelled' => 'danger',
+                                    default => 'info',
+                                };
+                            @endphp
+                            <td><span class="badge badge-{{ $badgeClass }}">{{ ucfirst($event->status) }}</span></td>
                             <td>{{ $event->start_date->format('M d, Y H:i') }}</td>
                             <td>
                                 <a href="{{ route('dashboard.event-detail', $event) }}" class="btn btn-primary">View Details</a>
@@ -78,22 +91,4 @@
     @endif
 </div>
 
-@push('scripts')
-<script>
-    function getStatusBadge(status) {
-        const badges = {
-            'approved': 'success',
-            'pending': 'warning',
-            'rejected': 'danger',
-            'draft': 'info',
-            'published': 'info',
-            'ongoing': 'success',
-            'completed': 'success',
-            'cancelled': 'danger'
-        };
-        const badgeClass = badges[status] || 'info';
-        return `<span class="badge badge-${badgeClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-    }
-</script>
-@endpush
 @endsection

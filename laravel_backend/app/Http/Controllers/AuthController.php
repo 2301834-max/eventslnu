@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -14,39 +16,17 @@ class AuthController extends Controller
     /**
      * Display the login form
      */
-    public function showLoginForm(): View
+    public function showLoginForm(): RedirectResponse
     {
-        return view('auth.login');
+        return redirect()->route('admin.login');
     }
 
     /**
      * Handle login form submission
      */
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-        ]);
-
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
-
-            // Generate Sanctum token for API access
-            $user = Auth::user();
-            $token = $user->createToken('web-token')->plainTextToken;
-
-            // Store token in session to pass to frontend
-            session(['api_token' => $token]);
-
-            return redirect()->intended(route('dashboard'));
-        }
-
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        return $this->attemptAdminWebLogin($request);
     }
 
     /**
@@ -55,9 +35,10 @@ class AuthController extends Controller
     public function apiLogin(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            // Allow either email or username-style value from Flutter.
-            'email' => 'required|string',
+            'email' => ['required', 'email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
             'password' => 'required|string|min:6',
+        ], [
+            'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
         ]);
 
         if ($validator->fails()) {
@@ -68,12 +49,9 @@ class AuthController extends Controller
         }
 
         $validated = $validator->validated();
-        $login = $validated['email'];
+        $login = strtolower($validated['email']);
 
-        // Support login via email OR name (username-like).
-        $user = User::where('email', $login)
-            ->orWhere('name', $login)
-            ->first();
+        $user = User::where('email', $login)->first();
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
@@ -129,14 +107,20 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => ['required', 'email', 'max:255', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
+            'student_id' => 'required|string|max:50|unique:users,student_id|regex:/^[A-Za-z0-9-]+$/',
             'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
+            'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower($validated['email']),
+            'student_id' => strtoupper($validated['student_id']),
             'password' => Hash::make($validated['password']),
+            'role' => 'student',
         ]);
 
         Auth::login($user);
@@ -152,8 +136,12 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => ['required', 'email', 'max:255', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
+            'student_id' => 'required|string|max:50|unique:users,student_id|regex:/^[A-Za-z0-9-]+$/',
             'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
+            'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
         ]);
 
         if ($validator->fails()) {
@@ -167,8 +155,10 @@ class AuthController extends Controller
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower($validated['email']),
+            'student_id' => strtoupper($validated['student_id']),
             'password' => Hash::make($validated['password']),
+            'role' => 'student',
         ]);
 
         $token = $user->createToken('api-token')->plainTextToken;
@@ -185,88 +175,66 @@ class AuthController extends Controller
      */
     public function showAdminLoginForm(): View
     {
+        $this->ensureLocalAdminAccount();
+
         return view('auth.admin-login');
     }
 
     /**
      * Handle admin login
      */
-    public function adminLogin(Request $request)
+    public function adminLogin(Request $request): RedirectResponse
     {
-        \Illuminate\Support\Facades\Log::info('Admin login request received', [
-            'method' => $request->method(),
-            'url' => $request->url(),
-            'session_id' => session()->getId(),
-            'session_driver' => config('session.driver'),
-            'has_csrf_token' => $request->has('_token'),
-            'request_token' => $request->input('_token') ? substr($request->input('_token'), 0, 10) . '...' : 'NONE',
-            'session_token' => csrf_token() ? substr(csrf_token(), 0, 10) . '...' : 'NONE',
-        ]);
+        return $this->attemptAdminWebLogin($request);
+    }
+
+    private function attemptAdminWebLogin(Request $request): RedirectResponse
+    {
+        $this->ensureLocalAdminAccount();
 
         $request->validate([
-            'email' => 'required|email',
+            'email' => ['required', 'email'],
             'password' => 'required|min:6',
         ]);
 
-        $user = User::where('email', $request->email)->first();
-
-        \Illuminate\Support\Facades\Log::info('User lookup', [
-            'email' => $request->email,
-            'user_found' => $user ? true : false,
-            'user_role' => $user?->role,
-        ]);
+        $user = User::where('email', strtolower($request->string('email')->trim()->toString()))
+            ->where('role', 'admin')
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            \Illuminate\Support\Facades\Log::warning('Invalid credentials', [
-                'email' => $request->email,
-                'user_exists' => $user ? true : false,
-                'password_matches' => $user ? Hash::check($request->password, $user->password) : false,
-            ]);
-            return back()->withErrors([
-                'email' => 'Invalid credentials',
+            return redirect()->route('admin.login')->withErrors([
+                'email' => 'Only administrator accounts can sign in here.',
             ])->onlyInput('email');
         }
-
-        if (!$user->isAdmin()) {
-            \Illuminate\Support\Facades\Log::warning('Non-admin attempted admin login', [
-                'email' => $request->email,
-                'user_role' => $user->role,
-            ]);
-            return back()->withErrors([
-                'email' => 'You are not authorized to access admin panel',
-            ])->onlyInput('email');
-        }
-
-        \Illuminate\Support\Facades\Log::info('Admin login successful - authenticating', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-        ]);
 
         // Use the web guard explicitly
         Auth::guard('web')->login($user, true);
 
-        \Illuminate\Support\Facades\Log::info('After guard login', [
-            'authenticated' => Auth::check(),
-            'user_id' => Auth::id(),
-        ]);
-
         $request->session()->regenerate();
-
-        \Illuminate\Support\Facades\Log::info('Session after regenerate', [
-            'authenticated' => Auth::check(),
-            'user_id' => Auth::id(),
-            'session_id' => session()->getId(),
-        ]);
 
         // Generate Sanctum token for API access
         $token = $user->createToken('admin-token')->plainTextToken;
         session(['api_token' => $token]);
 
-        \Illuminate\Support\Facades\Log::info('Redirecting to admin dashboard', [
-            'user_id' => $user->id,
-            'authenticated' => Auth::check(),
-        ]);
-
         return redirect()->route('admin.dashboard');
+    }
+
+    private function ensureLocalAdminAccount(): void
+    {
+        if (!app()->environment('local')) {
+            return;
+        }
+
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@lnusystem.local'],
+            [
+                'name' => 'LNU Administrator',
+                'password' => Hash::make('password123'),
+                'role' => 'admin',
+                'student_id' => null,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -15,6 +16,10 @@ class EventController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Event::with('creator');
+
+        if (!$request->user()?->isAdmin()) {
+            $query->whereNotIn('status', ['draft', 'cancelled']);
+        }
 
         // Filter by status
         if ($request->has('status')) {
@@ -34,8 +39,10 @@ class EventController extends Controller
         // Search by title or location
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where('title', 'like', "%{$search}%")
-                ->orWhere('location', 'like', "%{$search}%");
+            $query->where(function ($searchQuery) use ($search) {
+                $searchQuery->where('title', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%");
+            });
         }
 
         // Sort
@@ -62,6 +69,10 @@ class EventController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if ($response = $this->ensureAdmin($request)) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|unique:events|max:255',
             'description' => 'nullable|string',
@@ -69,7 +80,7 @@ class EventController extends Controller
             'end_date' => 'required|date|after:start_date',
             'location' => 'required|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
-            'event_image' => 'nullable|image|max:5120', // 5MB
+            'event_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         $validated['created_by'] = auth()->id();
@@ -95,17 +106,31 @@ class EventController extends Controller
      */
     public function show(Event $event): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $event->load([
+        $user = request()->user();
+
+        if (!$user?->isAdmin() && in_array($event->status, ['draft', 'cancelled'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found',
+            ], 404);
+        }
+
+        $relations = ['creator'];
+        if ($user?->isAdmin()) {
+            $relations = [
                 'creator',
                 'registrations' => function ($query) {
                     $query->with('user');
                 },
                 'attendanceRecords' => function ($query) {
                     $query->with('user')->latest()->limit(50);
-                }
-            ]),
+                },
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $event->load($relations),
             'statistics' => [
                 'total_registrations' => $event->registrations()->count(),
                 'approved_registrations' => $event->getApprovedRegistrationsCount(),
@@ -122,6 +147,10 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event): JsonResponse
     {
+        if ($response = $this->ensureAdmin($request)) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'title' => 'nullable|string|unique:events,title,' . $event->id . '|max:255',
             'description' => 'nullable|string',
@@ -130,14 +159,14 @@ class EventController extends Controller
             'location' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
             'status' => 'nullable|in:draft,published,ongoing,completed,cancelled',
-            'event_image' => 'nullable|image|max:5120',
+            'event_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         // Handle image upload
         if ($request->hasFile('event_image')) {
             // Delete old image if exists
             if ($event->event_image) {
-                \Storage::disk('public')->delete($event->event_image);
+                Storage::disk('public')->delete($event->event_image);
             }
             $path = $request->file('event_image')->store('events', 'public');
             $validated['event_image'] = $path;
@@ -157,6 +186,10 @@ class EventController extends Controller
      */
     public function destroy(Event $event): JsonResponse
     {
+        if ($response = $this->ensureAdmin(request())) {
+            return $response;
+        }
+
         $event->delete();
 
         return response()->json([
@@ -170,6 +203,10 @@ class EventController extends Controller
      */
     public function publish(Event $event): JsonResponse
     {
+        if ($response = $this->ensureAdmin(request())) {
+            return $response;
+        }
+
         if ($event->status !== 'draft') {
             return response()->json([
                 'success' => false,
@@ -191,6 +228,10 @@ class EventController extends Controller
      */
     public function cancel(Event $event, Request $request): JsonResponse
     {
+        if ($response = $this->ensureAdmin($request)) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'reason' => 'nullable|string'
         ]);
@@ -209,6 +250,10 @@ class EventController extends Controller
      */
     public function start(Event $event): JsonResponse
     {
+        if ($response = $this->ensureAdmin(request())) {
+            return $response;
+        }
+
         if (!in_array($event->status, ['published', 'draft'])) {
             return response()->json([
                 'success' => false,
@@ -230,6 +275,10 @@ class EventController extends Controller
      */
     public function end(Event $event): JsonResponse
     {
+        if ($response = $this->ensureAdmin(request())) {
+            return $response;
+        }
+
         $event->update(['status' => 'completed']);
 
         return response()->json([
@@ -237,5 +286,17 @@ class EventController extends Controller
             'message' => 'Event completed successfully',
             'data' => $event
         ]);
+    }
+
+    private function ensureAdmin(Request $request): ?JsonResponse
+    {
+        if ($request->user()?->isAdmin()) {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Only administrators can manage events.',
+        ], 403);
     }
 }

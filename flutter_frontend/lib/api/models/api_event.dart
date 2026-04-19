@@ -1,3 +1,5 @@
+import 'package:flutter_smart_event/api/api_config.dart';
+
 class ApiEvent {
   ApiEvent({
     required this.id,
@@ -7,6 +9,8 @@ class ApiEvent {
     required this.status,
     required this.startDate,
     required this.endDate,
+    required this.eventImageUrl,
+    required this.isRegistrationOpen,
   });
 
   final int id;
@@ -16,6 +20,8 @@ class ApiEvent {
   final String status;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String eventImageUrl;
+  final bool isRegistrationOpen;
 
   factory ApiEvent.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic v) => v == null ? null : DateTime.tryParse(v.toString());
@@ -28,7 +34,8 @@ class ApiEvent {
       status: (json['status'] ?? '').toString(),
       startDate: parseDate(json['start_date']),
       endDate: parseDate(json['end_date']),
+      eventImageUrl: ApiConfig.resolveUrl(json['event_image_url']?.toString()),
+      isRegistrationOpen: json['is_registration_open'] == true,
     );
   }
 }
-

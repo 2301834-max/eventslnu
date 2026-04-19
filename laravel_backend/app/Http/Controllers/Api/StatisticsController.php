@@ -7,9 +7,31 @@ use App\Models\AttendanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 
 class StatisticsController extends Controller
 {
+    private function sqlHourOnlyExpression(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%H:00', checked_in_at)"
+            : "DATE_FORMAT(checked_in_at, '%H:00')";
+    }
+
+    private function sqlHourDateExpression(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m-%d %H:00', checked_in_at)"
+            : "DATE_FORMAT(checked_in_at, '%Y-%m-%d %H:00')";
+    }
+
+    private function sqlDateExpression(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "date(checked_in_at)"
+            : "DATE(checked_in_at)";
+    }
+
     /**
      * Get comprehensive event statistics
      */
@@ -38,7 +60,7 @@ class StatisticsController extends Controller
 
         // Peak check-in time
         $peakTime = AttendanceRecord::where('event_id', $event->id)
-            ->selectRaw("DATE_FORMAT(checked_in_at, '%H:00') as hour, COUNT(*) as count")
+            ->selectRaw($this->sqlHourOnlyExpression() . " as hour, COUNT(*) as count")
             ->groupBy('hour')
             ->orderBy('count', 'desc')
             ->first();
@@ -92,7 +114,7 @@ class StatisticsController extends Controller
         }
 
         $hourlyData = $query
-            ->selectRaw("DATE_FORMAT(checked_in_at, '%Y-%m-%d %H:00') as hour, COUNT(*) as count")
+            ->selectRaw($this->sqlHourDateExpression() . " as hour, COUNT(*) as count")
             ->groupBy('hour')
             ->orderBy('hour', 'asc')
             ->get();
@@ -120,7 +142,7 @@ class StatisticsController extends Controller
         }
 
         $dailyData = $query
-            ->selectRaw("DATE(checked_in_at) as date, COUNT(DISTINCT user_id) as count")
+            ->selectRaw($this->sqlDateExpression() . " as date, COUNT(DISTINCT user_id) as count")
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();

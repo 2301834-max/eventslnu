@@ -43,6 +43,7 @@ class ApiAuthService {
   Future<void> register({
     required String name,
     required String email,
+    required String studentId,
     required String password,
   }) async {
     await _api.postJson(
@@ -51,6 +52,7 @@ class ApiAuthService {
       body: {
         'name': name,
         'email': email,
+        'student_id': studentId,
         'password': password,
         'password_confirmation': password,
       },
@@ -58,9 +60,9 @@ class ApiAuthService {
   }
 
   Future<ApiUser> getMe() async {
-    final json = await _api.getJson('/api/user');
-    final userJson = json is Map<String, dynamic> ? json : <String, dynamic>{};
+    final json = await _api.getJson('/api/profile');
+    final data = json['data'];
+    final userJson = data is Map<String, dynamic> ? data : <String, dynamic>{};
     return ApiUser.fromJson(userJson);
   }
 }
-

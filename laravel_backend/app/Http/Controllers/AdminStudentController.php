@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AdminStudentController extends Controller
 {
@@ -39,11 +40,17 @@ class AdminStudentController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
+            'student_id' => 'required|string|max:50|unique:users,student_id|regex:/^[A-Za-z0-9-]+$/',
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
+            'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
         ]);
 
         $validated['role'] = 'student';
+        $validated['email'] = strtolower($validated['email']);
+        $validated['student_id'] = strtoupper($validated['student_id']);
         $validated['password'] = Hash::make($validated['password']);
 
         User::create($validated);
@@ -93,9 +100,16 @@ class AdminStudentController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $student->id,
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($student->id), 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
+            'student_id' => ['required', 'string', 'max:50', Rule::unique('users', 'student_id')->ignore($student->id), 'regex:/^[A-Za-z0-9-]+$/'],
             'password' => 'nullable|string|min:8|confirmed',
+        ], [
+            'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
+            'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
         ]);
+
+        $validated['email'] = strtolower($validated['email']);
+        $validated['student_id'] = strtoupper($validated['student_id']);
 
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);

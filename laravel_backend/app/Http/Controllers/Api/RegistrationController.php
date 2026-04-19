@@ -73,18 +73,48 @@ class RegistrationController extends Controller
      */
     public function store(Request $request, Event $event): JsonResponse
     {
-        // Check if event is open for registration
-        if ($event->status === 'draft' || $event->status === 'cancelled') {
+        $validated = $request->validate([
+            'student_id' => 'required|string|max:50|regex:/^[A-Za-z0-9-]+$/',
+        ], [
+            'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user?->hasInstitutionalEmail()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Event is not open for registration'
+                'message' => 'Only institutional @lnu.edu.ph accounts may register for events.',
+            ], 422);
+        }
+
+        if (!$user->student_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account does not have a student ID yet. Please update your profile first.',
+            ], 422);
+        }
+
+        if (strtoupper($validated['student_id']) !== strtoupper((string) $user->student_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided student ID does not match your account.',
+            ], 422);
+        }
+
+        if (!$event->isOpenForRegistration()) {
+            return response()->json([
+                'success' => false,
+                'message' => $event->hasRegistrationClosed()
+                    ? 'Event registration is already closed.'
+                    : 'Event is not open for registration'
             ], 400);
         }
 
         // Check if user already registered, but allow re-register if last was rejected/cancelled
         // by reusing the existing row (to satisfy unique index).
         $existing = Registration::where('event_id', $event->id)
-            ->where('user_id', auth()->id())
+            ->where('user_id', $user->id)
             ->latest()
             ->first();
 
@@ -103,10 +133,12 @@ class RegistrationController extends Controller
                 'approved_by' => null,
             ]);
 
+            QRCode::where('registration_id', $existing->id)->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Registration successful. Waiting for approval.',
-                'data' => $existing->load('user', 'event'),
+                'data' => $existing->load('user', 'event', 'qrCode'),
             ], 200);
         }
 
@@ -120,14 +152,14 @@ class RegistrationController extends Controller
 
         $registration = Registration::create([
             'event_id' => $event->id,
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'status' => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Registration successful. Waiting for approval.',
-            'data' => $registration->load('user', 'event')
+            'data' => $registration->load('user', 'event', 'qrCode')
         ], 201);
     }
 

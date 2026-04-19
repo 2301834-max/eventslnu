@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\StatisticsController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\QRCodeController;
 use App\Http\Controllers\Api\QRRegistrationController;
+use App\Http\Controllers\Api\ProfileController;
 
 // Public authentication routes
 Route::post('/login', [AuthController::class, 'apiLogin']);
@@ -26,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
 
     /**
      * EVENTS MANAGEMENT

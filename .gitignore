@@ -39,3 +39,5 @@ Thumbs.db
 # --- Environment Secrets ---
 .env*
 auth.json
+laravel_backend/database/testing.sqlite
+laravel_backend/database/testing.sqlite-*

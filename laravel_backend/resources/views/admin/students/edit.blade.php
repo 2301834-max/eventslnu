@@ -35,10 +35,29 @@
                     id="email" 
                     name="email" 
                     value="{{ old('email', $student->email) }}"
+                    placeholder="student@lnu.edu.ph"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('email') border-red-500 @enderror" 
                     required
                 >
+                <p class="text-xs text-gray-500 mt-1">Only institutional email addresses ending in @lnu.edu.ph are allowed.</p>
                 @error('email')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Student ID -->
+            <div>
+                <label for="student_id" class="block text-sm font-medium text-gray-700 mb-1">Student ID <span class="text-red-600">*</span></label>
+                <input
+                    type="text"
+                    id="student_id"
+                    name="student_id"
+                    value="{{ old('student_id', $student->student_id) }}"
+                    placeholder="2026-0001"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('student_id') border-red-500 @enderror"
+                    required
+                >
+                @error('student_id')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>

@@ -83,8 +83,23 @@ class ApiClient {
     }
 
     if (status < 200 || status >= 300) {
+      final errors = json['errors'];
+      String message = (json['message'] ?? 'Request failed').toString();
+      if (errors is Map) {
+        for (final value in errors.values) {
+          if (value is List && value.isNotEmpty) {
+            message = value.first.toString();
+            break;
+          }
+          if (value != null) {
+            message = value.toString();
+            break;
+          }
+        }
+      }
+
       throw ApiException(
-        (json['message'] ?? 'Request failed').toString(),
+        message,
         statusCode: status,
       );
     }
@@ -92,4 +107,3 @@ class ApiClient {
     return json;
   }
 }
-

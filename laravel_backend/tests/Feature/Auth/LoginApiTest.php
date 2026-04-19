@@ -15,12 +15,12 @@ class LoginApiTest extends TestCase
     {
         User::factory()->create([
             'name' => 'Login User',
-            'email' => 'login@example.com',
+            'email' => 'login@lnu.edu.ph',
             'password' => Hash::make('password123'),
         ]);
 
         $response = $this->post('/api/login', [
-            'email' => 'login@example.com',
+            'email' => 'login@lnu.edu.ph',
             'password' => 'password123',
         ]);
 
@@ -29,20 +29,20 @@ class LoginApiTest extends TestCase
                 'message' => 'Login successful',
                 'user' => [
                     'name' => 'Login User',
-                    'email' => 'login@example.com',
+                    'email' => 'login@lnu.edu.ph',
                 ],
             ])
             ->assertJsonStructure([
                 'message',
                 'token',
-                'user' => ['id', 'name', 'email', 'created_at', 'updated_at'],
+                'user' => ['id', 'name', 'email', 'student_id', 'created_at', 'updated_at'],
             ]);
     }
 
-    public function test_api_login_returns_json_validation_errors_without_json_headers(): void
+    public function test_api_login_returns_json_validation_errors_for_missing_or_short_credentials(): void
     {
         $response = $this->post('/api/login', [
-            'email' => 'not-an-email',
+            'email' => '',
             'password' => '123',
         ]);
 
@@ -56,12 +56,12 @@ class LoginApiTest extends TestCase
     public function test_api_login_rejects_invalid_credentials(): void
     {
         User::factory()->create([
-            'email' => 'user@example.com',
+            'email' => 'user@lnu.edu.ph',
             'password' => Hash::make('password123'),
         ]);
 
         $response = $this->post('/api/login', [
-            'email' => 'user@example.com',
+            'email' => 'user@lnu.edu.ph',
             'password' => 'wrongpassword',
         ]);
 
@@ -69,5 +69,17 @@ class LoginApiTest extends TestCase
             ->assertJson([
                 'message' => 'Invalid credentials',
             ]);
+    }
+
+    public function test_api_login_rejects_non_institutional_email_addresses(): void
+    {
+        $response = $this->post('/api/login', [
+            'email' => 'user@gmail.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonPath('errors.email.0', 'Please use your institutional email ending in @lnu.edu.ph.');
     }
 }

@@ -4,52 +4,50 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">Admin Dashboard</h1>
+    <h1 class="mb-8 text-3xl font-bold text-gray-800">Admin Dashboard</h1>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Total Events -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex justify-between items-start">
+    <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-lg bg-white p-6 shadow">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-gray-600 text-sm font-medium">Total Events</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ $totalEvents }}</p>
+                    <p class="text-sm font-medium text-gray-600">Total Events</p>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">{{ $totalEvents }}</p>
                 </div>
-                <div class="text-4xl text-blue-400">📅</div>
+                <div class="text-4xl text-blue-400">EV</div>
             </div>
         </div>
 
-        <!-- Total Registrations -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex justify-between items-start">
+        <div class="rounded-lg bg-white p-6 shadow">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-gray-600 text-sm font-medium">Total Registrations</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">{{ $totalRegistrations }}</p>
+                    <p class="text-sm font-medium text-gray-600">Total Registrations</p>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">{{ $totalRegistrations }}</p>
                 </div>
-                <div class="text-4xl text-green-400">📝</div>
+                <div class="text-4xl text-green-400">RG</div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="{{ route('admin.events.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-center font-semibold transition">
-                ➕ Create New Event
+    <div class="mb-8 rounded-lg bg-white p-6 shadow">
+        <h2 class="mb-4 text-xl font-bold text-gray-800">Quick Actions</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <a href="{{ route('admin.events.create') }}" class="rounded-lg bg-indigo-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-indigo-700">
+                Create New Event
             </a>
-            <a href="{{ route('admin.students.create') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-center font-semibold transition">
-                ➕ Register Student
+            <a href="{{ route('admin.students.create') }}" class="rounded-lg bg-green-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-green-700">
+                Register Student
             </a>
-            <a href="{{ route('admin.registrations') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-center font-semibold transition">
-                📋 Review Registrations
+            <a href="{{ route('admin.registrations') }}" class="rounded-lg bg-blue-600 px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700">
+                Review Registrations
+            </a>
+            <a href="{{ route('admin.reports.index') }}" class="rounded-lg bg-slate-800 px-6 py-3 text-center font-semibold text-white transition hover:bg-slate-900">
+                View Reports Dashboard
             </a>
         </div>
     </div>
 
-    <!-- Recent Events -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
+    <div class="overflow-hidden rounded-lg bg-white shadow">
+        <div class="border-b border-gray-200 p-6">
             <h2 class="text-xl font-bold text-gray-800">Recent Events</h2>
         </div>
         <div class="overflow-x-auto">
@@ -79,13 +77,13 @@
                                     default => 'bg-gray-100 text-gray-800',
                                 };
                             @endphp
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $statusClass }}">
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">
                                 {{ ucfirst($event->status) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $event->registrations()->count() }}</td>
                         <td class="px-6 py-4 text-sm space-x-2">
-                            <a href="{{ route('admin.events.show', $event) }}" class="text-indigo-600 hover:text-indigo-700 font-semibold">View</a>
+                            <a href="{{ route('admin.events.show', $event) }}" class="font-semibold text-indigo-600 hover:text-indigo-700">View</a>
                         </td>
                     </tr>
                     @empty

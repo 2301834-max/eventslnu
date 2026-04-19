@@ -3,160 +3,192 @@
 @section('title', 'Register Event')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">Register New Event</h1>
+<div class="space-y-8">
+    <section class="rounded-[2rem] bg-gradient-to-r from-brand-700 via-brand-600 to-sky-500 px-8 py-8 text-white shadow-panel">
+        <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-blue-100">New Event</p>
+                <h2 class="mt-3 text-4xl font-semibold tracking-tight">Create an event with clean details and a valid future schedule.</h2>
+                <p class="mt-4 max-w-2xl text-sm leading-7 text-blue-50">
+                    Past start times are now blocked to avoid invalid registrations and inaccurate reporting.
+                </p>
+            </div>
+            <div class="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur">
+                <p class="text-sm font-semibold uppercase tracking-[0.25em] text-blue-100">Reminder</p>
+                <ul class="mt-4 space-y-3 text-sm text-blue-50">
+                    <li>Set the start date to the current time or later.</li>
+                    <li>End date must come after the start date.</li>
+                    <li>Use Published when the event is ready for student registration.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
 
-    <div class="bg-white rounded-lg shadow p-8">
-        <form method="POST" action="{{ route('admin.events.store') }}" enctype="multipart/form-data" class="space-y-6">
+    <section class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-panel">
+        <form method="POST" action="{{ route('admin.events.store') }}" enctype="multipart/form-data" class="space-y-8">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Title -->
-                <div class="md:col-span-2">
-                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Event Title <span class="text-red-600">*</span></label>
-                    <input 
-                        type="text" 
-                        id="title" 
-                        name="title" 
-                        value="{{ old('title') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('title') border-red-500 @enderror" 
-                        required
-                    >
-                    @error('title')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+            <div class="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+                <div class="space-y-6">
+                    <div>
+                        <label for="title" class="mb-2 block text-sm font-semibold text-slate-700">Event Title</label>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            value="{{ old('title') }}"
+                            placeholder="Leadership Summit 2026"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('title') border-rose-400 @enderror"
+                            required
+                        >
+                        @error('title')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="description" class="mb-2 block text-sm font-semibold text-slate-700">Description</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="7"
+                            placeholder="Add the event purpose, agenda highlights, and who should attend."
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('description') border-rose-400 @enderror"
+                            required
+                        >{{ old('description') }}</textarea>
+                        @error('description')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="location" class="mb-2 block text-sm font-semibold text-slate-700">Location</label>
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            value="{{ old('location') }}"
+                            placeholder="Main Auditorium"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('location') border-rose-400 @enderror"
+                            required
+                        >
+                        @error('location')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
-                <!-- Description -->
-                <div class="md:col-span-2">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-600">*</span></label>
-                    <textarea 
-                        id="description" 
-                        name="description" 
-                        rows="4"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('description') border-red-500 @enderror" 
-                        required
-                    >{{ old('description') }}</textarea>
-                    @error('description')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                <div class="space-y-6 rounded-3xl bg-slate-50 p-6">
+                    <div>
+                        <label for="start_date" class="mb-2 block text-sm font-semibold text-slate-700">Start Date and Time</label>
+                        <input
+                            type="datetime-local"
+                            id="start_date"
+                            name="start_date"
+                            value="{{ old('start_date') }}"
+                            min="{{ $minimumStartDate }}"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('start_date') border-rose-400 @enderror"
+                            required
+                        >
+                        <p class="mt-2 text-xs text-slate-500">Past date and time selections are not allowed.</p>
+                        @error('start_date')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                <!-- Start Date -->
-                <div>
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Start Date & Time <span class="text-red-600">*</span></label>
-                    <input 
-                        type="datetime-local" 
-                        id="start_date" 
-                        name="start_date" 
-                        value="{{ old('start_date') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('start_date') border-red-500 @enderror" 
-                        required
-                    >
-                    @error('start_date')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                    <div>
+                        <label for="end_date" class="mb-2 block text-sm font-semibold text-slate-700">End Date and Time</label>
+                        <input
+                            type="datetime-local"
+                            id="end_date"
+                            name="end_date"
+                            value="{{ old('end_date') }}"
+                            min="{{ old('start_date', $minimumStartDate) }}"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('end_date') border-rose-400 @enderror"
+                            required
+                        >
+                        @error('end_date')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                <!-- End Date -->
-                <div>
-                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date & Time <span class="text-red-600">*</span></label>
-                    <input 
-                        type="datetime-local" 
-                        id="end_date" 
-                        name="end_date" 
-                        value="{{ old('end_date') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('end_date') border-red-500 @enderror" 
-                        required
-                    >
-                    @error('end_date')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                    <div>
+                        <label for="max_participants" class="mb-2 block text-sm font-semibold text-slate-700">Max Participants</label>
+                        <input
+                            type="number"
+                            id="max_participants"
+                            name="max_participants"
+                            value="{{ old('max_participants') }}"
+                            min="1"
+                            placeholder="100"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('max_participants') border-rose-400 @enderror"
+                            required
+                        >
+                        @error('max_participants')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                <!-- Location -->
-                <div class="md:col-span-2">
-                    <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Location <span class="text-red-600">*</span></label>
-                    <input 
-                        type="text" 
-                        id="location" 
-                        name="location" 
-                        value="{{ old('location') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('location') border-red-500 @enderror" 
-                        required
-                    >
-                    @error('location')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                    <div>
+                        <label for="status" class="mb-2 block text-sm font-semibold text-slate-700">Status</label>
+                        <select
+                            id="status"
+                            name="status"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('status') border-rose-400 @enderror"
+                            required
+                        >
+                            <option value="">Select status</option>
+                            <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="published" {{ old('status') === 'published' ? 'selected' : '' }}>Published</option>
+                            <option value="ongoing" {{ old('status') === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                            <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        </select>
+                        @error('status')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                <!-- Max Participants -->
-                <div>
-                    <label for="max_participants" class="block text-sm font-medium text-gray-700 mb-1">Max Participants <span class="text-red-600">*</span></label>
-                    <input 
-                        type="number" 
-                        id="max_participants" 
-                        name="max_participants" 
-                        value="{{ old('max_participants') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('max_participants') border-red-500 @enderror" 
-                        min="1"
-                        required
-                    >
-                    @error('max_participants')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Status -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-600">*</span></label>
-                    <select 
-                        id="status" 
-                        name="status"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('status') border-red-500 @enderror" 
-                        required
-                    >
-                        <option value="">Select Status</option>
-                        <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="published" {{ old('status') === 'published' ? 'selected' : '' }}>Published</option>
-                        <option value="ongoing" {{ old('status') === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                        <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ old('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    </select>
-                    @error('status')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Event Image -->
-                <div class="md:col-span-2">
-                    <label for="event_image" class="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
-                    <input 
-                        type="file" 
-                        id="event_image" 
-                        name="event_image" 
-                        accept="image/*"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('event_image') border-red-500 @enderror"
-                    >
-                    @error('event_image')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                    <div>
+                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Image</label>
+                        <input
+                            type="file"
+                            id="event_image"
+                            name="event_image"
+                            accept="image/*"
+                            class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('event_image') border-rose-400 @enderror"
+                        >
+                        <p class="mt-2 text-xs text-slate-500">JPEG, PNG, JPG, or GIF up to 2MB.</p>
+                        @error('event_image')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
-            <!-- Buttons -->
-            <div class="flex gap-4 pt-6 border-t border-gray-200">
-                <button 
-                    type="submit" 
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold transition"
-                >
+            <div class="flex flex-wrap gap-4 border-t border-slate-200 pt-6">
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-700">
                     Create Event
                 </button>
-                <a href="{{ route('admin.events.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-semibold transition">
+                <a href="{{ route('admin.events.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Cancel
                 </a>
             </div>
         </form>
-    </div>
+    </section>
 </div>
+
+<script>
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+
+    if (startDateInput && endDateInput) {
+        const syncEndDateMin = () => {
+            endDateInput.min = startDateInput.value || '{{ $minimumStartDate }}';
+        };
+
+        startDateInput.addEventListener('change', syncEndDateMin);
+        syncEndDateMin();
+    }
+</script>
 @endsection

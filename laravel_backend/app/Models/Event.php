@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -26,6 +27,11 @@ class Event extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'max_participants' => 'integer',
+    ];
+
+    protected $appends = [
+        'event_image_url',
+        'is_registration_open',
     ];
 
     // Relationships
@@ -105,5 +111,33 @@ class Event extends Model
             return false; // unlimited
         }
         return $this->getApprovedRegistrationsCount() >= $this->max_participants;
+    }
+
+    public function getEventImageUrlAttribute(): ?string
+    {
+        if (!$this->event_image) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->event_image);
+    }
+
+    public function hasRegistrationClosed(): bool
+    {
+        return $this->end_date?->isPast() ?? false;
+    }
+
+    public function isOpenForRegistration(): bool
+    {
+        if (in_array($this->status, ['draft', 'cancelled', 'completed'], true)) {
+            return false;
+        }
+
+        return !$this->hasRegistrationClosed();
+    }
+
+    public function getIsRegistrationOpenAttribute(): bool
+    {
+        return $this->isOpenForRegistration();
     }
 }

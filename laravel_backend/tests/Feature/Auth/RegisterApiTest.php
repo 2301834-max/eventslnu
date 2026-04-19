@@ -14,7 +14,8 @@ class RegisterApiTest extends TestCase
     {
         $response = $this->post('/api/register', [
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test@lnu.edu.ph',
+            'student_id' => '2026-1101',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -24,17 +25,19 @@ class RegisterApiTest extends TestCase
                 'message' => 'User registered successfully',
                 'user' => [
                     'name' => 'Test User',
-                    'email' => 'test@example.com',
+                    'email' => 'test@lnu.edu.ph',
+                    'student_id' => '2026-1101',
                 ],
             ])
             ->assertJsonStructure([
                 'message',
                 'token',
-                'user' => ['id', 'name', 'email', 'created_at', 'updated_at'],
+                'user' => ['id', 'name', 'email', 'student_id', 'created_at', 'updated_at'],
             ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'test@example.com',
+            'email' => 'test@lnu.edu.ph',
+            'student_id' => '2026-1101',
         ]);
     }
 
@@ -43,6 +46,7 @@ class RegisterApiTest extends TestCase
         $response = $this->post('/api/register', [
             'name' => '',
             'email' => 'not-an-email',
+            'student_id' => '',
             'password' => '123',
             'password_confirmation' => '456',
         ]);
@@ -51,23 +55,39 @@ class RegisterApiTest extends TestCase
             ->assertJson([
                 'message' => 'Validation failed',
             ])
-            ->assertJsonValidationErrors(['name', 'email', 'password']);
+            ->assertJsonValidationErrors(['name', 'email', 'student_id', 'password']);
     }
 
     public function test_api_register_rejects_duplicate_email(): void
     {
         User::factory()->create([
-            'email' => 'duplicate@example.com',
+            'email' => 'duplicate@lnu.edu.ph',
         ]);
 
         $response = $this->post('/api/register', [
             'name' => 'Another User',
-            'email' => 'duplicate@example.com',
+            'email' => 'duplicate@lnu.edu.ph',
+            'student_id' => '2026-1102',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_api_register_rejects_non_institutional_email_and_missing_student_id(): void
+    {
+        $response = $this->post('/api/register', [
+            'name' => 'Another User',
+            'email' => 'duplicate@gmail.com',
+            'student_id' => '',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['email', 'student_id'])
+            ->assertJsonPath('errors.email.0', 'Please use your institutional email ending in @lnu.edu.ph.');
     }
 }

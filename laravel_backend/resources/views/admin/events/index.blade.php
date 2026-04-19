@@ -3,73 +3,132 @@
 @section('title', 'Event List')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">Event List</h1>
-        <a href="{{ route('admin.events.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold">
-            ➕ Create Event
-        </a>
-    </div>
+<div class="space-y-8">
+    <section class="rounded-[2rem] bg-gradient-to-r from-slate-950 via-brand-900 to-sky-900 px-8 py-8 text-white shadow-panel">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div class="max-w-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.35em] text-sky-200">Event Operations</p>
+                <h2 class="mt-3 text-4xl font-semibold tracking-tight">Keep the event pipeline clean, current, and ready to publish.</h2>
+                <p class="mt-4 text-sm leading-7 text-slate-200">
+                    Review schedules, spot completed activities, and move quickly into new registrations from the admin workspace.
+                </p>
+            </div>
+            <a href="{{ route('admin.events.create') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
+                Create Event
+            </a>
+        </div>
+    </section>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-panel">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Total</p>
+            <p class="mt-4 text-4xl font-semibold text-slate-900">{{ $summary['total'] }}</p>
+            <p class="mt-2 text-sm text-slate-500">All events in the system.</p>
+        </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-panel">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Upcoming</p>
+            <p class="mt-4 text-4xl font-semibold text-slate-900">{{ $summary['upcoming'] }}</p>
+            <p class="mt-2 text-sm text-slate-500">Events scheduled from now onward.</p>
+        </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-panel">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Active</p>
+            <p class="mt-4 text-4xl font-semibold text-slate-900">{{ $summary['active'] }}</p>
+            <p class="mt-2 text-sm text-slate-500">Published or ongoing events.</p>
+        </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-panel">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Completed</p>
+            <p class="mt-4 text-4xl font-semibold text-slate-900">{{ $summary['completed'] }}</p>
+            <p class="mt-2 text-sm text-slate-500">Closed events ready for reporting.</p>
+        </div>
+    </section>
+
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-panel">
+        <div class="flex flex-col gap-3 border-b border-slate-200 px-8 py-6 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900">All Events</h2>
+                <p class="mt-1 text-sm text-slate-500">A live view of schedule, status, and registration volume.</p>
+            </div>
+            <div class="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-600">
+                {{ $events->total() }} records
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Title</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Start Date</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">End Date</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Registrations</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                        <th class="px-8 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Event</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Schedule</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Registrations</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-slate-100 bg-white">
                     @forelse($events as $event)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm font-medium text-gray-800">{{ $event->title }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $event->start_date->format('M d, Y H:i') }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $event->end_date->format('M d, Y H:i') }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            @php
-                                $statusClass = match ($event->status) {
-                                    'draft' => 'bg-gray-100 text-gray-800',
-                                    'published' => 'bg-blue-100 text-blue-800',
-                                    'ongoing' => 'bg-green-100 text-green-800',
-                                    'completed' => 'bg-gray-200 text-gray-900',
-                                    'cancelled' => 'bg-red-100 text-red-800',
-                                    default => 'bg-gray-100 text-gray-800',
-                                };
-                            @endphp
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $statusClass }}">
-                                {{ ucfirst($event->status) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $event->registrations()->count() }}/{{ $event->max_participants }}</td>
-                        <td class="px-6 py-4 text-sm space-x-2">
-                            <a href="{{ route('admin.events.show', $event) }}" class="text-blue-600 hover:text-blue-700 font-semibold">View</a>
-                            <a href="{{ route('admin.events.edit', $event) }}" class="text-yellow-600 hover:text-yellow-700 font-semibold">Edit</a>
-                            <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline" onsubmit="return confirm('Are you sure?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-700 font-semibold">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
+                        @php
+                            $statusClass = match ($event->status) {
+                                'draft' => 'bg-slate-100 text-slate-700',
+                                'published' => 'bg-blue-100 text-blue-700',
+                                'ongoing' => 'bg-emerald-100 text-emerald-700',
+                                'completed' => 'bg-violet-100 text-violet-700',
+                                'cancelled' => 'bg-rose-100 text-rose-700',
+                                default => 'bg-slate-100 text-slate-700',
+                            };
+                        @endphp
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="px-8 py-5 align-top">
+                                <p class="text-sm font-semibold text-slate-900">{{ $event->title }}</p>
+                                <p class="mt-2 text-sm text-slate-500">{{ $event->location }}</p>
+                            </td>
+                            <td class="px-6 py-5 text-sm text-slate-600">
+                                <p>{{ $event->start_date->format('M d, Y h:i A') }}</p>
+                                <p class="mt-1 text-xs text-slate-400">to {{ $event->end_date->format('M d, Y h:i A') }}</p>
+                            </td>
+                            <td class="px-6 py-5 text-sm">
+                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">
+                                    {{ ucfirst($event->status) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-5 text-sm text-slate-700">
+                                <span class="font-semibold">{{ $event->registrations_count }}</span>
+                                <span class="text-slate-400">/ {{ $event->max_participants }}</span>
+                            </td>
+                            <td class="px-6 py-5 text-sm">
+                                <div class="flex flex-wrap gap-3">
+                                    <a href="{{ route('admin.events.show', $event) }}" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-100">
+                                        View
+                                    </a>
+                                    <a href="{{ route('admin.events.edit', $event) }}" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 font-semibold text-amber-700 transition hover:bg-amber-100">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this event?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 font-semibold text-rose-700 transition hover:bg-rose-100">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-600">No events found</td>
-                    </tr>
+                        <tr>
+                            <td colspan="5" class="px-8 py-16 text-center">
+                                <p class="text-lg font-semibold text-slate-700">No events found</p>
+                                <p class="mt-2 text-sm text-slate-500">Create your first event to start managing registrations.</p>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
         @if($events->hasPages())
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            {{ $events->links() }}
-        </div>
+            <div class="border-t border-slate-200 bg-slate-50 px-8 py-4">
+                {{ $events->links() }}
+            </div>
         @endif
-    </div>
+    </section>
 </div>
 @endsection

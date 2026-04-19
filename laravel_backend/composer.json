@@ -50,9 +50,31 @@
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
         ],
+        "test:unit": [
+            "@php tools/phpunit-live.php --testsuite Unit"
+        ],
+        "test:feature": [
+            "@php tools/phpunit-compact.php --testsuite Feature"
+        ],
+        "test:fast": [
+            "@php artisan config:clear --ansi",
+            "@php tools/phpunit-live.php"
+        ],
+        "test:compact": [
+            "@php tools/phpunit-compact.php"
+        ],
+        "test:unit:compact": [
+            "@php tools/phpunit-compact.php --testsuite Unit"
+        ],
+        "test:feature:compact": [
+            "@php tools/phpunit-compact.php --testsuite Feature"
+        ],
+        "test:raw": [
+            "@php vendor/bin/phpunit --configuration phpunit.xml --colors=never --columns 80"
+        ],
         "test": [
             "@php artisan config:clear --ansi",
-            "@php artisan test"
+            "@php tools/phpunit-live.php --delay-ms=300"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
