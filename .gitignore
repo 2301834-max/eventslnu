@@ -9,6 +9,9 @@ Thumbs.db
 *.class
 
 # --- Flutter / Dart ---
+# Laravel-only branch keeps Flutter out of version control.
+flutter_frontend/
+
 # Using **/ ensures it catches these folders even if they are inside 'flutter_frontend'
 **/build/
 **/.dart_tool/
