@@ -90,7 +90,15 @@ class Registration extends Model
         parent::boot();
 
         static::creating(function ($registration) {
-            $registration->registration_number = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
+            if (! empty($registration->registration_number)) {
+                return;
+            }
+
+            do {
+                $candidate = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
+            } while (self::where('registration_number', $candidate)->exists());
+
+            $registration->registration_number = $candidate;
         });
     }
 }

@@ -17,6 +17,6 @@
     "Pest\\Plugins\\Verbose",
     "Pest\\Plugins\\Version",
     "Pest\\Plugins\\Parallel",
-    "Pest\\Laravel\\Plugin",
-    "Pest\\Arch\\Plugin"
+    "Pest\\Arch\\Plugin",
+    "Pest\\Laravel\\Plugin"
 ]
