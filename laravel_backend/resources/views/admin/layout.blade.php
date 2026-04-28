@@ -60,11 +60,12 @@
                 <p class="mt-3 text-sm leading-6 text-blue-100/85">
                     A focused command center for campus events, live registrations, and reporting.
                 </p>
-                <div class="mt-6 rounded-3xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
-                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-accent-100">LNU Theme</p>
-                    <p class="mt-2 text-sm leading-6 text-blue-50/85">
-                        Blue for control, yellow for motion, and cleaner data surfaces for faster admin work.
-                    </p>
+                <div class="mt-6 px-4 py-2">
+                    <img
+                        src="{{ asset('images/lnu-logo.png') }}"
+                        alt="Leyte Normal University seal"
+                        class="mx-auto h-32 w-32 object-contain"
+                    >
                 </div>
             </div>
 
@@ -109,11 +110,7 @@
 
         <div class="flex min-h-screen flex-1 flex-col">
             <header class="border-b border-brand-100 bg-white/85 backdrop-blur">
-                <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-brand-600">Administration</p>
-                        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">@yield('title', 'Admin Dashboard')</h1>
-                    </div>
+                <div class="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-end">
                     <div class="flex items-center gap-4 rounded-3xl border border-brand-100 bg-gradient-to-r from-white to-accent-50 px-4 py-3 shadow-sm">
                         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 text-sm font-bold text-brand-700">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}

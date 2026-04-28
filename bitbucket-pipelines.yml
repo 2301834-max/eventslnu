@@ -1,0 +1,23 @@
+image: atlassian/default-image:4
+
+definitions:
+  services:
+    docker:
+      memory: 3072
+
+pipelines:
+  default:
+    - step:
+        name: Laravel Backend CI
+        services:
+          - docker
+        script:
+          - cd laravel_backend
+          - docker compose up -d --build db redis app
+          - docker compose exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+          - docker compose exec -T app sh -lc "cp .env.testing .env && touch database/testing.sqlite && php artisan key:generate --force && php artisan migrate --force"
+          - docker compose exec -T app php artisan test --testsuite=Unit
+          - docker compose exec -T app php artisan test --testsuite=Feature
+        after-script:
+          - cd laravel_backend
+          - docker compose down -v
