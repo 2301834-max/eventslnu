@@ -18,6 +18,7 @@ class AdminEventValidationTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.events.store'), [
             'title' => 'Past Event',
+            'organization' => 'Student Affairs Office',
             'description' => 'This event should fail validation.',
             'start_date' => now()->subDay()->format('Y-m-d H:i:s'),
             'end_date' => now()->addDay()->format('Y-m-d H:i:s'),

@@ -16,6 +16,7 @@
             <div class="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <p class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-200">Current Event</p>
                 <p class="mt-4 text-2xl font-semibold">{{ $event->title }}</p>
+                <p class="mt-2 text-sm text-slate-300">{{ $event->organization }}</p>
                 <p class="mt-2 text-sm text-slate-300">{{ $event->location }}</p>
                 <p class="mt-4 text-xs uppercase tracking-[0.3em] text-slate-400">{{ ucfirst($event->status) }}</p>
             </div>
@@ -40,6 +41,27 @@
                             required
                         >
                         @error('title')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="organization" class="mb-2 block text-sm font-semibold text-slate-700">Organization</label>
+                        <input
+                            type="text"
+                            id="organization"
+                            name="organization"
+                            value="{{ old('organization', $event->organization) }}"
+                            list="organization-options"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('organization') border-rose-400 @enderror"
+                            required
+                        >
+                        <datalist id="organization-options">
+                            @foreach($organizations as $organization)
+                                <option value="{{ $organization }}"></option>
+                            @endforeach
+                        </datalist>
+                        @error('organization')
                             <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -145,19 +167,23 @@
                     </div>
 
                     <div>
-                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Image</label>
-                        @if($event->event_image)
-                            <div class="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
-                                <img src="{{ asset('storage/' . $event->event_image) }}" alt="{{ $event->title }}" class="h-40 w-full rounded-xl object-cover">
-                            </div>
-                        @endif
+                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Poster</label>
+                        <div class="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
+                            <img
+                                id="eventImagePreview"
+                                src="{{ $event->event_image_url }}"
+                                alt="{{ $event->title }} poster"
+                                class="h-44 w-full rounded-xl object-cover"
+                            >
+                        </div>
                         <input
                             type="file"
                             id="event_image"
                             name="event_image"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                             class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('event_image') border-rose-400 @enderror"
                         >
+                        <p class="mt-2 text-xs text-slate-500">JPG, JPEG, PNG, or WEBP up to 20MB.</p>
                         @error('event_image')
                             <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
@@ -180,6 +206,8 @@
 <script>
     const editStartDateInput = document.getElementById('start_date');
     const editEndDateInput = document.getElementById('end_date');
+    const editEventImageInput = document.getElementById('event_image');
+    const editEventImagePreview = document.getElementById('eventImagePreview');
 
     if (editStartDateInput && editEndDateInput) {
         const syncEditEndDateMin = () => {
@@ -188,6 +216,22 @@
 
         editStartDateInput.addEventListener('change', syncEditEndDateMin);
         syncEditEndDateMin();
+    }
+
+    if (editEventImageInput && editEventImagePreview) {
+        const currentPoster = editEventImagePreview.src;
+
+        editEventImageInput.addEventListener('change', () => {
+            const file = editEventImageInput.files?.[0];
+
+            if (!file) {
+                editEventImagePreview.src = currentPoster;
+                return;
+            }
+
+            editEventImagePreview.src = URL.createObjectURL(file);
+            editEventImagePreview.onload = () => URL.revokeObjectURL(editEventImagePreview.src);
+        });
     }
 </script>
 @endsection

@@ -14,19 +14,24 @@
         <!-- Event Details Card -->
         <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
             <h3 style="margin-bottom: 1.5rem; color: #333;">Event Details</h3>
+            <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" style="width: 100%; height: 260px; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem;">
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Hosted By</p>
+                    <p style="font-size: 1.1rem; font-weight: 500; color: #333;">{{ $event->organization ?? 'Not specified' }}</p>
+                </div>
                 <div>
                     <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Location</p>
                     <p style="font-size: 1.1rem; font-weight: 500; color: #333;">{{ $event->location }}</p>
                 </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
                 <div>
                     <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Capacity</p>
-                    <p style="font-size: 1.1rem; font-weight: 500; color: #333;">{{ $event->capacity }} attendees</p>
+                    <p style="font-size: 1.1rem; font-weight: 500; color: #333;">{{ $event->max_participants }} attendees</p>
                 </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem;">
                 <div>
                     <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Start Date</p>
                     <p style="font-size: 1.1rem; font-weight: 500; color: #333;">{{ $event->start_date->format('M d, Y H:i') }}</p>
@@ -206,8 +211,8 @@
                     : 0;
                 document.getElementById('attendanceRate').textContent = attendanceRate + '%';
                 
-                const capacityUsed = {{ $event->capacity }} > 0
-                    ? Math.round((stats.total_registrations / {{ $event->capacity }}) * 100)
+                const capacityUsed = {{ $event->max_participants }} > 0
+                    ? Math.round((stats.total_registrations / {{ $event->max_participants }}) * 100)
                     : 0;
                 document.getElementById('capacityUsed').textContent = capacityUsed + '%';
             })

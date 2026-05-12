@@ -46,6 +46,68 @@ class AdminEventManagementTest extends TestCase
             ->assertSee('Showcase Event');
     }
 
+    public function test_event_index_only_shows_edit_and_delete_for_draft_and_published_events(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $draft = Event::create($this->eventData($admin, 'Draft Action Event', 'draft'));
+        $published = Event::create($this->eventData($admin, 'Published Action Event', 'published'));
+        $ongoing = Event::create($this->eventData($admin, 'Ongoing View Only Event', 'ongoing'));
+        $completed = Event::create($this->eventData($admin, 'Completed View Only Event', 'completed'));
+        $cancelled = Event::create($this->eventData($admin, 'Cancelled View Only Event', 'cancelled'));
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.events.index'))
+            ->assertOk();
+
+        $response
+            ->assertSee(route('admin.events.edit', $draft), false)
+            ->assertSee('<form method="POST" action="' . route('admin.events.destroy', $draft) . '"', false)
+            ->assertSee(route('admin.events.edit', $published), false)
+            ->assertSee('<form method="POST" action="' . route('admin.events.destroy', $published) . '"', false)
+            ->assertDontSee(route('admin.events.edit', $ongoing), false)
+            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $ongoing) . '"', false)
+            ->assertDontSee(route('admin.events.edit', $completed), false)
+            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $completed) . '"', false)
+            ->assertDontSee(route('admin.events.edit', $cancelled), false)
+            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $cancelled) . '"', false);
+    }
+
+    public function test_admin_cannot_edit_update_or_delete_view_only_event_statuses(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        foreach (['ongoing', 'completed', 'cancelled'] as $status) {
+            $event = Event::create($this->eventData($admin, ucfirst($status) . ' Locked Event', $status));
+
+            $this->actingAs($admin)
+                ->get(route('admin.events.edit', $event))
+                ->assertRedirect(route('admin.events.show', $event));
+
+            $this->actingAs($admin)
+                ->put(route('admin.events.update', $event), array_merge(
+                    $this->eventData($admin, 'Updated ' . $status, 'published'),
+                    [
+                        'start_date' => now()->addDays(4)->format('Y-m-d H:i:s'),
+                        'end_date' => now()->addDays(5)->format('Y-m-d H:i:s'),
+                    ]
+                ))
+                ->assertRedirect(route('admin.events.show', $event));
+
+            $event->refresh();
+            $this->assertSame(ucfirst($status) . ' Locked Event', $event->title);
+            $this->assertSame($status, $event->status);
+
+            $this->actingAs($admin)
+                ->delete(route('admin.events.destroy', $event))
+                ->assertRedirect(route('admin.events.show', $event));
+
+            $this->assertNotSoftDeleted('events', [
+                'id' => $event->id,
+            ]);
+        }
+    }
+
     public function test_admin_can_approve_registration_from_web_panel(): void
     {
         [$admin, $registration] = $this->makeRegistrationContext('pending');
@@ -145,6 +207,7 @@ class AdminEventManagementTest extends TestCase
     ): array {
         return [
             'title' => $title,
+            'organization' => 'Student Affairs Office',
             'description' => $title . ' description',
             'start_date' => $start ?? now()->addDays(2),
             'end_date' => $end ?? now()->addDays(3),

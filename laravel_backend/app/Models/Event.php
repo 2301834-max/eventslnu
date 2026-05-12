@@ -13,6 +13,7 @@ class Event extends Model
 
     protected $fillable = [
         'title',
+        'organization',
         'description',
         'start_date',
         'end_date',
@@ -31,6 +32,7 @@ class Event extends Model
 
     protected $appends = [
         'event_image_url',
+        'capacity',
         'is_registration_open',
     ];
 
@@ -116,10 +118,23 @@ class Event extends Model
     public function getEventImageUrlAttribute(): ?string
     {
         if (!$this->event_image) {
-            return null;
+            return asset('images/event-placeholder.svg');
         }
 
-        return Storage::disk('public')->url($this->event_image);
+        if (filter_var($this->event_image, FILTER_VALIDATE_URL)) {
+            return $this->event_image;
+        }
+
+        if (!Storage::disk('public')->exists($this->event_image)) {
+            return asset('images/event-placeholder.svg');
+        }
+
+        return asset('storage/' . ltrim($this->event_image, '/'));
+    }
+
+    public function getCapacityAttribute(): int
+    {
+        return $this->max_participants;
     }
 
     public function hasRegistrationClosed(): bool
@@ -134,6 +149,11 @@ class Event extends Model
         }
 
         return !$this->hasRegistrationClosed();
+    }
+
+    public function allowsAdminChanges(): bool
+    {
+        return in_array($this->status, ['draft', 'published'], true);
     }
 
     public function getIsRegistrationOpenAttribute(): bool

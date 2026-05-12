@@ -7,9 +7,11 @@
     <div class="flex justify-between items-start mb-8">
         <h1 class="text-3xl font-bold text-gray-800">{{ $event->title }}</h1>
         <div class="flex gap-2">
-            <a href="{{ route('admin.events.edit', $event) }}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-semibold">
-                Edit
-            </a>
+            @if($event->allowsAdminChanges())
+                <a href="{{ route('admin.events.edit', $event) }}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-semibold">
+                    Edit
+                </a>
+            @endif
             <a href="{{ route('admin.events.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold">
                 Back
             </a>
@@ -22,14 +24,17 @@
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">Event Information</h2>
                 
-                @if($event->event_image)
-                    <img src="{{ asset('storage/' . $event->event_image) }}" alt="{{ $event->title }}" class="w-full h-64 object-cover rounded-lg mb-4">
-                @endif
+                <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" class="w-full h-64 object-cover rounded-lg mb-4">
 
                 <div class="space-y-4">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Description</p>
                         <p class="text-gray-800 mt-1">{{ $event->description }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Hosted By</p>
+                        <p class="text-gray-800 mt-1">{{ $event->organization ?? 'Not specified' }}</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -94,7 +99,9 @@
                     </div>
                     <div>
                         <p class="text-gray-600 text-sm">Capacity</p>
-                        <p class="text-gray-800">{{ number_format((($event->registrations()->count() / $event->max_participants) * 100), 1) }}%</p>
+                        <p class="text-gray-800">
+                            {{ $event->max_participants > 0 ? number_format((($event->registrations()->count() / $event->max_participants) * 100), 1) . '%' : 'Unlimited' }}
+                        </p>
                     </div>
                 </div>
             </div>

@@ -27,9 +27,13 @@
                             </a>
                         </td>
                         <td class="px-6 py-4 text-sm font-medium text-gray-800">
-                            <a href="{{ route('admin.events.show', $registration->event) }}" class="text-indigo-600 hover:text-indigo-700">
-                                {{ $registration->event->title }}
-                            </a>
+                            @if($registration->event)
+                                <a href="{{ route('admin.events.show', $registration->event) }}" class="text-indigo-600 hover:text-indigo-700">
+                                    {{ $registration->event->title }}
+                                </a>
+                            @else
+                                <span class="text-gray-500">Event unavailable</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <span class="px-3 py-1 rounded-full text-xs font-semibold 

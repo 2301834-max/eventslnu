@@ -47,6 +47,28 @@
                     </div>
 
                     <div>
+                        <label for="organization" class="mb-2 block text-sm font-semibold text-slate-700">Organization</label>
+                        <input
+                            type="text"
+                            id="organization"
+                            name="organization"
+                            value="{{ old('organization') }}"
+                            list="organization-options"
+                            placeholder="Student Council"
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('organization') border-rose-400 @enderror"
+                            required
+                        >
+                        <datalist id="organization-options">
+                            @foreach($organizations as $organization)
+                                <option value="{{ $organization }}"></option>
+                            @endforeach
+                        </datalist>
+                        @error('organization')
+                            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="description" class="mb-2 block text-sm font-semibold text-slate-700">Description</label>
                         <textarea
                             id="description"
@@ -150,15 +172,23 @@
                     </div>
 
                     <div>
-                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Image</label>
+                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Poster</label>
+                        <div class="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
+                            <img
+                                id="eventImagePreview"
+                                src="{{ asset('images/event-placeholder.svg') }}"
+                                alt="Event poster preview"
+                                class="h-44 w-full rounded-xl object-cover"
+                            >
+                        </div>
                         <input
                             type="file"
                             id="event_image"
                             name="event_image"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                             class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('event_image') border-rose-400 @enderror"
                         >
-                        <p class="mt-2 text-xs text-slate-500">JPEG, PNG, JPG, or GIF up to 2MB.</p>
+                        <p class="mt-2 text-xs text-slate-500">JPG, JPEG, PNG, or WEBP up to 20MB.</p>
                         @error('event_image')
                             <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
@@ -181,6 +211,8 @@
 <script>
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
+    const eventImageInput = document.getElementById('event_image');
+    const eventImagePreview = document.getElementById('eventImagePreview');
 
     if (startDateInput && endDateInput) {
         const syncEndDateMin = () => {
@@ -189,6 +221,22 @@
 
         startDateInput.addEventListener('change', syncEndDateMin);
         syncEndDateMin();
+    }
+
+    if (eventImageInput && eventImagePreview) {
+        const fallbackPoster = eventImagePreview.src;
+
+        eventImageInput.addEventListener('change', () => {
+            const file = eventImageInput.files?.[0];
+
+            if (!file) {
+                eventImagePreview.src = fallbackPoster;
+                return;
+            }
+
+            eventImagePreview.src = URL.createObjectURL(file);
+            eventImagePreview.onload = () => URL.revokeObjectURL(eventImagePreview.src);
+        });
     }
 </script>
 @endsection

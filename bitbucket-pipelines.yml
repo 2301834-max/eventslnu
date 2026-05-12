@@ -1,23 +1,25 @@
-image: atlassian/default-image:4
+image: php:8.3-cli
 
 definitions:
-  services:
-    docker:
-      memory: 3072
+  caches:
+    composer: ~/.composer/cache
 
 pipelines:
   default:
     - step:
-        name: Laravel Backend CI
-        services:
-          - docker
+        name: Backend PHPUnit Tests
+        caches:
+          - composer
         script:
+          - apt-get update && apt-get install -y --no-install-recommends git unzip libzip-dev libsqlite3-dev libonig-dev
+          - docker-php-ext-install zip pdo_sqlite mbstring
+          - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+          - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+          - rm composer-setup.php
           - cd laravel_backend
-          - docker compose up -d --build db redis app
-          - docker compose exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
-          - docker compose exec -T app sh -lc "cp .env.testing .env && touch database/testing.sqlite && php artisan key:generate --force && php artisan migrate --force"
-          - docker compose exec -T app php artisan test --testsuite=Unit
-          - docker compose exec -T app php artisan test --testsuite=Feature
-        after-script:
-          - cd laravel_backend
-          - docker compose down -v
+          - export COMPOSER_ALLOW_SUPERUSER=1
+          - composer install --prefer-dist --no-interaction --no-progress --no-scripts
+          - printf "APP_NAME=SmartEvent\nAPP_ENV=testing\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\nAPP_DEBUG=true\nAPP_URL=http://localhost\nDB_CONNECTION=sqlite\nDB_DATABASE=:memory:\nCACHE_STORE=array\nSESSION_DRIVER=array\nQUEUE_CONNECTION=sync\nMAIL_MAILER=array\n" > .env
+          - php artisan package:discover --ansi
+          - php artisan config:clear --ansi
+          - php scripts/run-phpunit-ci.php

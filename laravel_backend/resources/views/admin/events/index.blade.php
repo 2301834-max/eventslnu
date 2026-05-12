@@ -58,6 +58,7 @@
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-8 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Event</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Hosted By</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Schedule</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Status</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Registrations</th>
@@ -78,8 +79,16 @@
                         @endphp
                         <tr class="hover:bg-slate-50/80">
                             <td class="px-8 py-5 align-top">
-                                <p class="text-sm font-semibold text-slate-900">{{ $event->title }}</p>
-                                <p class="mt-2 text-sm text-slate-500">{{ $event->location }}</p>
+                                <div class="flex items-center gap-4">
+                                    <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" class="h-16 w-24 rounded-xl object-cover">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900">{{ $event->title }}</p>
+                                        <p class="mt-2 text-sm text-slate-500">{{ $event->location }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-5 text-sm text-slate-600">
+                                {{ $event->organization ?? 'Not specified' }}
                             </td>
                             <td class="px-6 py-5 text-sm text-slate-600">
                                 <p>{{ $event->start_date->format('M d, Y h:i A') }}</p>
@@ -99,22 +108,24 @@
                                     <a href="{{ route('admin.events.show', $event) }}" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-100">
                                         View
                                     </a>
-                                    <a href="{{ route('admin.events.edit', $event) }}" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 font-semibold text-amber-700 transition hover:bg-amber-100">
-                                        Edit
-                                    </a>
-                                    <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this event?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 font-semibold text-rose-700 transition hover:bg-rose-100">
-                                            Delete
-                                        </button>
-                                    </form>
+                                    @if($event->allowsAdminChanges())
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 font-semibold text-amber-700 transition hover:bg-amber-100">
+                                            Edit
+                                        </a>
+                                        <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this event?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 font-semibold text-rose-700 transition hover:bg-rose-100">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-8 py-16 text-center">
+                            <td colspan="6" class="px-8 py-16 text-center">
                                 <p class="text-lg font-semibold text-slate-700">No events found</p>
                                 <p class="mt-2 text-sm text-slate-500">Create your first event to start managing registrations.</p>
                             </td>

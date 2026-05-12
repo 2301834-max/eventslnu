@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class EventController extends Controller
 {
@@ -36,11 +38,12 @@ class EventController extends Controller
             };
         }
 
-        // Search by title or location
+        // Search by title, location, or hosting organization
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($searchQuery) use ($search) {
                 $searchQuery->where('title', 'like', "%{$search}%")
+                    ->orWhere('organization', 'like', "%{$search}%")
                     ->orWhere('location', 'like', "%{$search}%");
             });
         }
@@ -73,14 +76,17 @@ class EventController extends Controller
             return $response;
         }
 
+        $this->normalizeEventPayload($request);
+
         $validated = $request->validate([
             'title' => 'required|string|unique:events|max:255',
+            'organization' => 'required|string|max:255',
             'description' => 'nullable|string',
             'start_date' => 'required|date|after:now',
             'end_date' => 'required|date|after:start_date',
             'location' => 'required|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
-            'event_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'event_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
         ]);
 
         $validated['created_by'] = auth()->id();
@@ -88,8 +94,7 @@ class EventController extends Controller
 
         // Handle image upload
         if ($request->hasFile('event_image')) {
-            $path = $request->file('event_image')->store('events', 'public');
-            $validated['event_image'] = $path;
+            $validated['event_image'] = $this->storeEventImage($request);
         }
 
         $event = Event::create($validated);
@@ -151,15 +156,18 @@ class EventController extends Controller
             return $response;
         }
 
+        $this->normalizeEventPayload($request);
+
         $validated = $request->validate([
             'title' => 'nullable|string|unique:events,title,' . $event->id . '|max:255',
+            'organization' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'start_date' => 'nullable|date|after:now',
             'end_date' => 'nullable|date|after:start_date',
             'location' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
             'status' => 'nullable|in:draft,published,ongoing,completed,cancelled',
-            'event_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'event_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
         ]);
 
         // Handle image upload
@@ -168,8 +176,7 @@ class EventController extends Controller
             if ($event->event_image) {
                 Storage::disk('public')->delete($event->event_image);
             }
-            $path = $request->file('event_image')->store('events', 'public');
-            $validated['event_image'] = $path;
+            $validated['event_image'] = $this->storeEventImage($request);
         }
 
         $event->update($validated);
@@ -298,5 +305,29 @@ class EventController extends Controller
             'success' => false,
             'message' => 'Only administrators can manage events.',
         ], 403);
+    }
+
+    private function normalizeEventPayload(Request $request): void
+    {
+        if ($request->filled('capacity') && !$request->filled('max_participants')) {
+            $request->merge(['max_participants' => $request->input('capacity')]);
+        }
+    }
+
+    private function storeEventImage(Request $request): string
+    {
+        try {
+            $path = $request->file('event_image')->store('events', 'public');
+        } catch (Throwable) {
+            $path = false;
+        }
+
+        if (!$path) {
+            throw ValidationException::withMessages([
+                'event_image' => ['The event poster could not be uploaded. Please try again.'],
+            ]);
+        }
+
+        return $path;
     }
 }

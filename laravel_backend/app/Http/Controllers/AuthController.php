@@ -105,6 +105,8 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        $this->normalizeRegistrationInput($request);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
@@ -134,6 +136,8 @@ class AuthController extends Controller
      */
     public function apiRegister(Request $request)
     {
+        $this->normalizeRegistrationInput($request);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
@@ -168,6 +172,41 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $user,
         ], 201);
+    }
+
+    private function normalizeRegistrationInput(Request $request): void
+    {
+        $aliases = [
+            'student_id' => ['studentId', 'studentID', 'student_number', 'studentNumber'],
+            'password_confirmation' => ['confirmPassword', 'passwordConfirmation', 'confirm_password'],
+        ];
+
+        $normalized = [];
+
+        foreach ($aliases as $field => $fieldAliases) {
+            if ($request->filled($field)) {
+                continue;
+            }
+
+            foreach ($fieldAliases as $alias) {
+                if ($request->filled($alias)) {
+                    $normalized[$field] = $request->input($alias);
+                    break;
+                }
+            }
+        }
+
+        if ($request->filled('email')) {
+            $normalized['email'] = strtolower(trim((string) $request->input('email')));
+        }
+
+        if ($request->filled('student_id') || array_key_exists('student_id', $normalized)) {
+            $normalized['student_id'] = strtoupper(trim((string) ($normalized['student_id'] ?? $request->input('student_id'))));
+        }
+
+        if ($normalized !== []) {
+            $request->merge($normalized);
+        }
     }
 
     /**

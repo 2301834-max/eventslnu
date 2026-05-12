@@ -69,8 +69,9 @@
                     type="password" 
                     id="password" 
                     name="password" 
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('password') border-red-500 @enderror" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none @error('password') border-red-500 @enderror"
                 >
+                <p class="text-xs text-gray-500 mt-1">Leave blank to keep current password. Use at least 6 characters when changing it.</p>
                 @error('password')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror

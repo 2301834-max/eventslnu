@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class AdminEventController extends Controller
 {
@@ -42,6 +43,7 @@ class AdminEventController extends Controller
     {
         return view('admin.events.create', [
             'minimumStartDate' => now()->format('Y-m-d\TH:i'),
+            'organizations' => $this->organizationOptions(),
         ]);
     }
 
@@ -53,8 +55,7 @@ class AdminEventController extends Controller
         $validated = $this->validateEventData($request);
 
         if ($request->hasFile('event_image')) {
-            $path = $request->file('event_image')->store('events', 'public');
-            $validated['event_image'] = $path;
+            $validated['event_image'] = $this->storeEventImage($request);
         }
 
         $validated['created_by'] = auth()->id();
@@ -82,13 +83,20 @@ class AdminEventController extends Controller
     /**
      * Show edit event form
      */
-    public function edit(Event $event): View
+    public function edit(Event $event): View|RedirectResponse
     {
+        if (! $event->allowsAdminChanges()) {
+            return redirect()
+                ->route('admin.events.show', $event)
+                ->withErrors(['event' => 'This event can only be viewed because its status is ' . ucfirst($event->status) . '.']);
+        }
+
         return view('admin.events.edit', [
             'event' => $event,
             'minimumStartDate' => $event->start_date->greaterThan(now())
                 ? now()->format('Y-m-d\TH:i')
                 : $event->start_date->format('Y-m-d\TH:i'),
+            'organizations' => $this->organizationOptions(),
         ]);
     }
 
@@ -97,14 +105,19 @@ class AdminEventController extends Controller
      */
     public function update(Request $request, Event $event): RedirectResponse
     {
+        if (! $event->allowsAdminChanges()) {
+            return redirect()
+                ->route('admin.events.show', $event)
+                ->withErrors(['event' => 'This event can only be viewed because its status is ' . ucfirst($event->status) . '.']);
+        }
+
         $validated = $this->validateEventData($request, $event);
 
         if ($request->hasFile('event_image')) {
             if ($event->event_image) {
                 Storage::disk('public')->delete($event->event_image);
             }
-            $path = $request->file('event_image')->store('events', 'public');
-            $validated['event_image'] = $path;
+            $validated['event_image'] = $this->storeEventImage($request);
         }
 
         $event->update($validated);
@@ -117,6 +130,12 @@ class AdminEventController extends Controller
      */
     public function destroy(Event $event): RedirectResponse
     {
+        if (! $event->allowsAdminChanges()) {
+            return redirect()
+                ->route('admin.events.show', $event)
+                ->withErrors(['event' => 'This event can only be viewed because its status is ' . ucfirst($event->status) . '.']);
+        }
+
         $event->delete();
 
         return redirect()->route('admin.events.index')->with('success', 'Event deleted successfully!');
@@ -174,17 +193,19 @@ class AdminEventController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'organization' => 'required|string|max:255',
             'description' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'location' => 'required|string|max:255',
             'max_participants' => 'required|integer|min:1',
             'status' => 'required|in:draft,published,ongoing,completed,cancelled',
-            'event_image' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'event_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:20480',
         ], [
             'end_date.after_or_equal' => 'The event end date must be after the start date.',
-            'event_image.mimes' => 'Event posters must be uploaded as JPG or PNG files only.',
-            'event_image.max' => 'Event posters must not be larger than 5MB.',
+            'organization.required' => 'Please enter the organization hosting this event.',
+            'event_image.mimes' => 'Event posters must be uploaded as JPG, JPEG, PNG, or WEBP files only.',
+            'event_image.max' => 'Event posters must not be larger than 20MB.',
         ]);
 
         $submittedStart = Carbon::parse($validated['start_date'])->seconds(0);
@@ -208,5 +229,32 @@ class AdminEventController extends Controller
         }
 
         return $validated;
+    }
+
+    private function organizationOptions()
+    {
+        return Event::query()
+            ->whereNotNull('organization')
+            ->where('organization', '!=', '')
+            ->distinct()
+            ->orderBy('organization')
+            ->pluck('organization');
+    }
+
+    private function storeEventImage(Request $request): string
+    {
+        try {
+            $path = $request->file('event_image')->store('events', 'public');
+        } catch (Throwable) {
+            $path = false;
+        }
+
+        if (!$path) {
+            throw ValidationException::withMessages([
+                'event_image' => 'The event poster could not be uploaded. Please try again.',
+            ]);
+        }
+
+        return $path;
     }
 }

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Event poster placeholder</title>
+  <desc id="desc">A simple placeholder image for events without posters.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="0.55" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#dbeafe" stop-opacity="0.82"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <path d="M0 510c145-54 266-66 401-27 188 54 313 42 486-39 122-57 222-63 313-22v253H0z" fill="#ffffff" opacity="0.12"/>
+  <rect x="300" y="132" width="600" height="410" rx="38" fill="url(#card)" opacity="0.95"/>
+  <rect x="365" y="202" width="130" height="28" rx="14" fill="#0f766e"/>
+  <rect x="365" y="268" width="470" height="34" rx="17" fill="#1f2937"/>
+  <rect x="365" y="326" width="365" height="22" rx="11" fill="#64748b"/>
+  <rect x="365" y="372" width="220" height="22" rx="11" fill="#64748b"/>
+  <circle cx="780" cy="420" r="58" fill="#2563eb" opacity="0.9"/>
+  <path d="M755 421h50M780 396v50" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+</svg>

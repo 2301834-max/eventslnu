@@ -47,6 +47,24 @@ class AdminStudentManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_store_student_with_six_character_password(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.students.store'), [
+            'name' => 'Short Password Student',
+            'email' => 'short-password@lnu.edu.ph',
+            'student_id' => '2026-2102',
+            'password' => 'secret',
+            'password_confirmation' => 'secret',
+        ])->assertRedirect(route('admin.students.index'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'short-password@lnu.edu.ph',
+            'student_id' => '2026-2102',
+        ]);
+    }
+
     public function test_admin_can_view_student_details(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

@@ -78,9 +78,13 @@
                     @forelse($registrations as $registration)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm font-medium text-gray-800">
-                            <a href="{{ route('admin.events.show', $registration->event) }}" class="text-indigo-600 hover:text-indigo-700">
-                                {{ $registration->event->title }}
-                            </a>
+                            @if($registration->event)
+                                <a href="{{ route('admin.events.show', $registration->event) }}" class="text-indigo-600 hover:text-indigo-700">
+                                    {{ $registration->event->title }}
+                                </a>
+                            @else
+                                <span class="text-gray-500">Event unavailable</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <span class="px-3 py-1 rounded-full text-xs font-semibold 
@@ -124,9 +128,13 @@
                     @forelse($attendanceRecords as $record)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm font-medium text-gray-800">
-                            <a href="{{ route('admin.events.show', $record->event) }}" class="text-indigo-600 hover:text-indigo-700">
-                                {{ $record->event->title }}
-                            </a>
+                            @if($record->event)
+                                <a href="{{ route('admin.events.show', $record->event) }}" class="text-indigo-600 hover:text-indigo-700">
+                                    {{ $record->event->title }}
+                                </a>
+                            @else
+                                <span class="text-gray-500">Event unavailable</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $record->check_in_time->format('M d, Y H:i') }}</td>
                     </tr>

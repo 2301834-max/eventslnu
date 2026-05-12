@@ -31,6 +31,7 @@ RUN docker-php-ext-configure gd --with-freetype && \
     docker-php-ext-install -j$(nproc) \
     pdo \
     pdo_mysql \
+    pdo_sqlite \
     bcmath \
     mbstring \
     pcntl \
@@ -44,6 +45,9 @@ RUN apk del .build-deps
 RUN { \
       echo "implicit_flush=Off"; \
       echo "output_buffering=4096"; \
+      echo "upload_max_filesize=20M"; \
+      echo "post_max_size=24M"; \
+      echo "memory_limit=256M"; \
     } > /usr/local/etc/php/conf.d/99-lnu.ini
 
 # Install Composer

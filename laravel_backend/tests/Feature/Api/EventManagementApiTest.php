@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -19,6 +21,7 @@ class EventManagementApiTest extends TestCase
 
         Event::create([
             'title' => 'Published Leadership Forum',
+            'organization' => 'Leadership Office',
             'description' => 'Published event',
             'start_date' => now()->addDays(4),
             'end_date' => now()->addDays(4)->addHours(4),
@@ -30,6 +33,7 @@ class EventManagementApiTest extends TestCase
 
         Event::create([
             'title' => 'Draft Workshop',
+            'organization' => 'Workshop Guild',
             'description' => 'Draft event',
             'start_date' => now()->addDays(5),
             'end_date' => now()->addDays(5)->addHours(2),
@@ -53,6 +57,7 @@ class EventManagementApiTest extends TestCase
 
         $response = $this->postJson('/api/events', [
             'title' => 'API Created Event',
+            'organization' => 'API Club',
             'description' => 'Event created in test',
             'start_date' => now()->addDays(3)->toDateTimeString(),
             'end_date' => now()->addDays(3)->addHours(3)->toDateTimeString(),
@@ -62,7 +67,33 @@ class EventManagementApiTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.organization', 'API Club')
             ->assertJsonPath('data.created_by', $admin->id);
+    }
+
+    public function test_can_upload_event_poster_and_get_renderable_url(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Poster Event',
+            'organization' => 'Media Team',
+            'description' => 'Event with a poster',
+            'start_date' => now()->addDays(3)->toDateTimeString(),
+            'end_date' => now()->addDays(3)->addHours(3)->toDateTimeString(),
+            'location' => 'Media Hall',
+            'max_participants' => 120,
+            'event_image' => $this->fakePngUpload(),
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.organization', 'Media Team')
+            ->assertJsonPath('data.event_image_url', url('storage/' . $response->json('data.event_image')));
+
+        Storage::disk('public')->assertExists($response->json('data.event_image'));
     }
 
     public function test_publish_changes_draft_event_to_published(): void
@@ -121,6 +152,7 @@ class EventManagementApiTest extends TestCase
 
         Event::create([
             'title' => 'Published Summit',
+            'organization' => 'Alpha Organization',
             'description' => 'published event',
             'start_date' => now()->addDays(5),
             'end_date' => now()->addDays(5)->addHours(2),
@@ -132,6 +164,7 @@ class EventManagementApiTest extends TestCase
 
         Event::create([
             'title' => 'Draft Location Match',
+            'organization' => 'Draft Organization',
             'description' => 'draft event',
             'start_date' => now()->addDays(6),
             'end_date' => now()->addDays(6)->addHours(2),
@@ -157,10 +190,12 @@ class EventManagementApiTest extends TestCase
 
         $this->putJson("/api/events/{$event->id}", [
             'title' => 'Updated Event Title',
+            'organization' => 'Updated Organization',
             'location' => 'Updated Hall',
             'status' => 'published',
         ])->assertOk()
             ->assertJsonPath('data.title', 'Updated Event Title')
+            ->assertJsonPath('data.organization', 'Updated Organization')
             ->assertJsonPath('data.location', 'Updated Hall')
             ->assertJsonPath('data.status', 'published');
     }
@@ -197,6 +232,7 @@ class EventManagementApiTest extends TestCase
     {
         return Event::create([
             'title' => $title,
+            'organization' => 'API Events Office',
             'description' => $title . ' description',
             'start_date' => now()->addDays(2),
             'end_date' => now()->addDays(2)->addHours(4),
@@ -205,5 +241,13 @@ class EventManagementApiTest extends TestCase
             'status' => $status,
             'created_by' => $admin->id,
         ]);
+    }
+
+    private function fakePngUpload(): UploadedFile
+    {
+        $path = tempnam(sys_get_temp_dir(), 'poster');
+        file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+
+        return new UploadedFile($path, 'poster.png', 'image/png', null, true);
     }
 }

@@ -41,6 +41,26 @@ class RegisterApiTest extends TestCase
         ]);
     }
 
+    public function test_api_register_accepts_common_mobile_field_names(): void
+    {
+        $response = $this->postJson('/api/register', [
+            'name' => 'Mobile User',
+            'email' => 'MOBILE-USER@LNU.EDU.PH',
+            'studentId' => '2026-1103',
+            'password' => 'secret123',
+            'confirmPassword' => 'secret123',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('user.email', 'mobile-user@lnu.edu.ph')
+            ->assertJsonPath('user.student_id', '2026-1103');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'mobile-user@lnu.edu.ph',
+            'student_id' => '2026-1103',
+        ]);
+    }
+
     public function test_api_register_returns_json_validation_errors_without_json_headers(): void
     {
         $response = $this->post('/api/register', [

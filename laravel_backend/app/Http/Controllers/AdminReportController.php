@@ -46,10 +46,19 @@ class AdminReportController extends Controller
     {
         $filters = $request->validate([
             'status' => ['nullable', 'in:draft,published,ongoing,completed,cancelled'],
+            'statuses' => ['nullable', 'array', 'min:1'],
+            'statuses.*' => ['in:draft,published,ongoing,completed,cancelled'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'search' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $statuses = collect($filters['statuses'] ?? [])
+            ->when(empty($filters['statuses'] ?? []) && ! empty($filters['status'] ?? null), fn ($collection) => $collection->push($filters['status']))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
         $events = $this->filteredEventsQuery($filters)
             ->withCount([
@@ -79,11 +88,54 @@ class AdminReportController extends Controller
             ->mapWithKeys(fn (string $status) => [$status => $events->where('status', $status)->count()]);
 
         $topEvent = $events->sortByDesc('registrations_count')->first();
+        $locationUsage = $events
+            ->map(function (Event $event) {
+                $location = trim((string) $event->location);
+
+                return [
+                    'location' => $location !== '' ? $location : 'Unspecified',
+                    'event_count' => 1,
+                    'registrations_count' => (int) $event->registrations_count,
+                    'attendance_records_count' => (int) $event->attendance_records_count,
+                ];
+            })
+            ->groupBy(fn (array $location) => mb_strtolower($location['location']))
+            ->map(fn ($locations) => [
+                'location' => $locations->first()['location'],
+                'event_count' => (int) $locations->sum('event_count'),
+                'registrations_count' => (int) $locations->sum('registrations_count'),
+                'attendance_records_count' => (int) $locations->sum('attendance_records_count'),
+            ])
+            ->sort(function (array $first, array $second) {
+                return [
+                    $second['event_count'],
+                    $second['registrations_count'],
+                    $second['attendance_records_count'],
+                    $first['location'],
+                ] <=> [
+                    $first['event_count'],
+                    $first['registrations_count'],
+                    $first['attendance_records_count'],
+                    $second['location'],
+                ];
+            })
+            ->values();
 
         return [
             'events' => $events,
+            'exportPreviewEvents' => Event::query()
+                ->select(['id', 'status', 'start_date', 'end_date'])
+                ->whereIn('status', ['ongoing', 'completed', 'cancelled'])
+                ->get()
+                ->map(fn (Event $event) => [
+                    'status' => $event->status,
+                    'start' => $event->start_date->toDateString(),
+                    'end' => $event->end_date->toDateString(),
+                ])
+                ->values(),
             'filters' => [
                 'status' => $filters['status'] ?? '',
+                'statuses' => $statuses,
                 'date_from' => $filters['date_from'] ?? '',
                 'date_to' => $filters['date_to'] ?? '',
                 'search' => $filters['search'] ?? '',
@@ -91,14 +143,23 @@ class AdminReportController extends Controller
             'summary' => $summary,
             'statusCounts' => $statusCounts,
             'topEvent' => $topEvent,
+            'locationUsage' => $locationUsage->take(5),
+            'topLocation' => $locationUsage->first(),
             'generatedAt' => now(),
         ];
     }
 
     private function filteredEventsQuery(array $filters)
     {
+        $statuses = collect($filters['statuses'] ?? [])
+            ->when(empty($filters['statuses'] ?? []) && ! empty($filters['status'] ?? null), fn ($collection) => $collection->push($filters['status']))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
         return Event::query()
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when(! empty($statuses), fn ($query) => $query->whereIn('status', $statuses))
             ->when($filters['date_from'] ?? null, fn ($query, $dateFrom) => $query->whereDate('start_date', '>=', $dateFrom))
             ->when($filters['date_to'] ?? null, fn ($query, $dateTo) => $query->whereDate('end_date', '<=', $dateTo))
             ->when($filters['search'] ?? null, function ($query, $search) {
@@ -190,7 +251,7 @@ class AdminReportController extends Controller
 
         $filtersLine = sprintf(
             'Filters  |  Status: %s  |  Date: %s to %s  |  Search: %s',
-            $report['filters']['status'] !== '' ? ucfirst($report['filters']['status']) : 'All',
+            $this->statusFilterLabel($report['filters']),
             $report['filters']['date_from'] !== '' ? $report['filters']['date_from'] : 'Any',
             $report['filters']['date_to'] !== '' ? $report['filters']['date_to'] : 'Any',
             $report['filters']['search'] !== '' ? $this->truncate($report['filters']['search'], 26) : 'None'
@@ -371,5 +432,18 @@ class AdminReportController extends Controller
         }
 
         return substr($value, 0, max(0, $length - 3)) . '...';
+    }
+
+    private function statusFilterLabel(array $filters): string
+    {
+        $statuses = $filters['statuses'] ?? [];
+
+        if (! empty($statuses)) {
+            return collect($statuses)
+                ->map(fn (string $status) => ucfirst($status))
+                ->implode(', ');
+        }
+
+        return $filters['status'] !== '' ? ucfirst($filters['status']) : 'All';
     }
 }

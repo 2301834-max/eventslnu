@@ -9,10 +9,17 @@ use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminStudentController;
 use App\Http\Controllers\AdminEventRegistrationQrController;
 use App\Http\Controllers\DebugController;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/storage/{path}', function (string $path) {
+    abort_unless(Storage::disk('public')->exists($path), 404);
+
+    return Storage::disk('public')->response($path);
+})->where('path', '.*')->name('public-storage.fallback');
 
     // Temporary test routes for debugging session/CSRF
     Route::get('/test/session', function () {

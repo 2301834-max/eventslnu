@@ -24,6 +24,7 @@ class EventViewApiTest extends TestCase
 
         $event = Event::create([
             'title' => 'Campus Leadership Summit',
+            'organization' => 'Student Council',
             'description' => 'Leadership workshop for students.',
             'start_date' => now()->addDays(10),
             'end_date' => now()->addDays(10)->addHours(4),
@@ -64,6 +65,7 @@ class EventViewApiTest extends TestCase
                 'data' => [
                     'id' => $event->id,
                     'title' => 'Campus Leadership Summit',
+                    'organization' => 'Student Council',
                     'description' => 'Leadership workshop for students.',
                     'location' => 'Main Auditorium',
                     'max_participants' => 200,
@@ -88,6 +90,7 @@ class EventViewApiTest extends TestCase
 
         $event = Event::create([
             'title' => 'Limited Event',
+            'organization' => 'Room 101 Committee',
             'description' => 'Capacity is already full.',
             'start_date' => now()->addDays(5),
             'end_date' => now()->addDays(5)->addHours(2),

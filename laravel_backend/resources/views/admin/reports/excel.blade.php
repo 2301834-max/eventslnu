@@ -115,7 +115,7 @@
         <p>Generated: {{ $generatedAt->format('M d, Y h:i A') }}</p>
         <p>
             Filters:
-            Status {{ $filters['status'] !== '' ? ucfirst($filters['status']) : 'All' }},
+            Status {{ ! empty($filters['statuses']) ? collect($filters['statuses'])->map(fn ($status) => ucfirst($status))->implode(', ') : ($filters['status'] !== '' ? ucfirst($filters['status']) : 'All') }},
             Date {{ $filters['date_from'] !== '' ? $filters['date_from'] : 'Any' }} to {{ $filters['date_to'] !== '' ? $filters['date_to'] : 'Any' }},
             Search {{ $filters['search'] !== '' ? $filters['search'] : 'None' }}
         </p>

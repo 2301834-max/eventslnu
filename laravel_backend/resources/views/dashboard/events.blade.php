@@ -26,8 +26,17 @@
                 <input type="text" id="eventTitle" name="title" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
             </div>
             <div style="margin-bottom: 1rem;">
+                <label for="eventOrganization">Organization *</label>
+                <input type="text" id="eventOrganization" name="organization" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div style="margin-bottom: 1rem;">
                 <label for="eventDescription">Description</label>
                 <textarea id="eventDescription" name="description" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; min-height: 100px;"></textarea>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label for="eventImage">Event Poster</label>
+                <img id="eventImagePreview" src="{{ asset('images/event-placeholder.svg') }}" alt="Event poster preview" style="display: block; width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; margin-bottom: 0.75rem;">
+                <input type="file" id="eventImage" name="event_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="width: 100%; padding: 0.75rem; border: 1px dashed #ddd; border-radius: 4px;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
@@ -81,16 +90,18 @@
                 return;
             }
             
-            let html = '<table><thead><tr><th>Title</th><th>Location</th><th>Capacity</th><th>Start Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>Poster</th><th>Title</th><th>Organization</th><th>Location</th><th>Capacity</th><th>Start Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
             
             events.forEach(event => {
                 const startDate = new Date(event.start_date).toLocaleString();
                 const statusColor = event.status === 'draft' ? 'info' : event.status === 'published' ? 'success' : 'warning';
                 
                 html += `<tr>
+                    <td><img src="${event.event_image_url}" alt="${event.title} poster" style="width: 72px; height: 48px; object-fit: cover; border-radius: 6px;"></td>
                     <td><strong>${event.title}</strong></td>
+                    <td>${event.organization || 'Not specified'}</td>
                     <td>${event.location}</td>
-                    <td>${event.capacity}</td>
+                    <td>${event.max_participants}</td>
                     <td>${startDate}</td>
                     <td><span class="badge badge-${statusColor}">${event.status}</span></td>
                     <td>
@@ -117,6 +128,7 @@
     function closeCreateEventModal() {
         document.getElementById('createEventModal').style.display = 'none';
         document.getElementById('createEventForm').reset();
+        document.getElementById('eventImagePreview').src = '{{ asset('images/event-placeholder.svg') }}';
     }
     
     function deleteEvent(eventId) {
@@ -143,23 +155,27 @@
     document.getElementById('createEventForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const formData = {
-            title: document.getElementById('eventTitle').value,
-            description: document.getElementById('eventDescription').value,
-            location: document.getElementById('eventLocation').value,
-            capacity: parseInt(document.getElementById('eventCapacity').value),
-            start_date: new Date(document.getElementById('eventStartDate').value).toISOString(),
-            end_date: new Date(document.getElementById('eventEndDate').value).toISOString()
-        };
+        const formData = new FormData();
+        formData.append('title', document.getElementById('eventTitle').value);
+        formData.append('organization', document.getElementById('eventOrganization').value);
+        formData.append('description', document.getElementById('eventDescription').value);
+        formData.append('location', document.getElementById('eventLocation').value);
+        formData.append('max_participants', parseInt(document.getElementById('eventCapacity').value));
+        formData.append('start_date', new Date(document.getElementById('eventStartDate').value).toISOString());
+        formData.append('end_date', new Date(document.getElementById('eventEndDate').value).toISOString());
+
+        const poster = document.getElementById('eventImage').files[0];
+        if (poster) {
+            formData.append('event_image', poster);
+        }
         
         fetch(`${API_BASE_URL}/events`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: formData
         })
         .then(response => {
             if (response.ok) {
@@ -177,6 +193,19 @@
     
     document.getElementById('searchInput').addEventListener('keyup', function() {
         loadEvents();
+    });
+
+    document.getElementById('eventImage').addEventListener('change', function() {
+        const file = this.files[0];
+        const preview = document.getElementById('eventImagePreview');
+
+        if (!file) {
+            preview.src = '{{ asset('images/event-placeholder.svg') }}';
+            return;
+        }
+
+        preview.src = URL.createObjectURL(file);
+        preview.onload = () => URL.revokeObjectURL(preview.src);
     });
     
     // Load events on page load

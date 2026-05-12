@@ -93,4 +93,68 @@ class AdminReportTest extends TestCase
         $pdfResponse->assertHeader('content-disposition');
         $this->assertStringStartsWith('%PDF-1.4', $pdfResponse->baseResponse->getContent());
     }
+
+    public function test_admin_report_export_accepts_date_range_and_multiple_statuses(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        Event::create([
+            'title' => 'Campus Forum',
+            'description' => 'Ongoing campus discussion',
+            'start_date' => '2026-04-10 09:00:00',
+            'end_date' => '2026-04-10 12:00:00',
+            'location' => 'Main Hall',
+            'max_participants' => 80,
+            'status' => 'ongoing',
+            'created_by' => $admin->id,
+        ]);
+
+        Event::create([
+            'title' => 'Cancelled Workshop',
+            'description' => 'Workshop cancelled by admin',
+            'start_date' => '2026-06-15 09:00:00',
+            'end_date' => '2026-06-15 12:00:00',
+            'location' => 'Lab 1',
+            'max_participants' => 40,
+            'status' => 'cancelled',
+            'created_by' => $admin->id,
+        ]);
+
+        Event::create([
+            'title' => 'Outside Completion',
+            'description' => 'Completed outside selected date range',
+            'start_date' => '2026-11-03 09:00:00',
+            'end_date' => '2026-11-03 12:00:00',
+            'location' => 'Auditorium',
+            'max_participants' => 120,
+            'status' => 'completed',
+            'created_by' => $admin->id,
+        ]);
+
+        Event::create([
+            'title' => 'Draft Planning',
+            'description' => 'Draft should not be selected',
+            'start_date' => '2026-05-20 09:00:00',
+            'end_date' => '2026-05-20 12:00:00',
+            'location' => 'Room 4',
+            'max_participants' => 25,
+            'status' => 'draft',
+            'created_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.reports.export.excel', [
+                'date_from' => '2026-04-01',
+                'date_to' => '2026-10-31',
+                'statuses' => ['ongoing', 'cancelled'],
+            ]));
+
+        $response->assertOk()
+            ->assertSee('Campus Forum')
+            ->assertSee('Cancelled Workshop')
+            ->assertDontSee('Outside Completion')
+            ->assertDontSee('Draft Planning');
+    }
 }

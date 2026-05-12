@@ -42,7 +42,7 @@ class AdminStudentController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'unique:users,email', 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
             'student_id' => 'required|string|max:50|unique:users,student_id|regex:/^[A-Za-z0-9-]+$/',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:6|confirmed',
         ], [
             'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
             'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',
@@ -102,7 +102,7 @@ class AdminStudentController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($student->id), 'regex:' . User::INSTITUTIONAL_EMAIL_REGEX],
             'student_id' => ['required', 'string', 'max:50', Rule::unique('users', 'student_id')->ignore($student->id), 'regex:/^[A-Za-z0-9-]+$/'],
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'nullable|string|min:6|confirmed',
         ], [
             'email.regex' => 'Please use your institutional email ending in @lnu.edu.ph.',
             'student_id.regex' => 'Student ID may only contain letters, numbers, and hyphens.',

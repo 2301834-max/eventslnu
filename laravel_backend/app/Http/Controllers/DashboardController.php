@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Registration;
 use App\Models\AttendanceRecord;
+use App\Models\User;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -18,6 +19,7 @@ class DashboardController extends Controller
         $upcomingEvents = Event::where('start_date', '>', now())->count();
         $ongoingEvents = Event::where('status', 'ongoing')->count();
         $completedEvents = Event::where('status', 'completed')->count();
+        $registeredStudents = User::where('role', 'student')->count();
 
         $totalRegistrations = Registration::count();
         $pendingRegistrations = Registration::where('status', 'pending')->count();
@@ -36,6 +38,7 @@ class DashboardController extends Controller
                 'upcomingEvents' => $upcomingEvents,
                 'ongoingEvents' => $ongoingEvents,
                 'completedEvents' => $completedEvents,
+                'registeredStudents' => $registeredStudents,
                 'totalRegistrations' => $totalRegistrations,
                 'pendingRegistrations' => $pendingRegistrations,
                 'approvedRegistrations' => $approvedRegistrations,
@@ -51,6 +54,7 @@ class DashboardController extends Controller
             'upcomingEvents' => $upcomingEvents,
             'ongoingEvents' => $ongoingEvents,
             'completedEvents' => $completedEvents,
+            'registeredStudents' => $registeredStudents,
             'totalRegistrations' => $totalRegistrations,
             'pendingRegistrations' => $pendingRegistrations,
             'approvedRegistrations' => $approvedRegistrations,

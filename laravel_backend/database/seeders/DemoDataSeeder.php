@@ -63,6 +63,7 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Leadership Summit 2026'],
             [
                 'description' => 'Flagship leadership program for student organizations.',
+                'organization' => 'Student Affairs Office',
                 'start_date' => now()->addDays(7)->setTime(9, 0),
                 'end_date' => now()->addDays(7)->setTime(17, 0),
                 'location' => 'Main Auditorium',
@@ -80,6 +81,7 @@ class DemoDataSeeder extends Seeder
                 ['title' => "Event {$i}"],
                 [
                     'description' => "Auto generated event {$i}",
+                    'organization' => ['Student Council', 'College of Arts and Sciences', 'Engineering Society', 'LNU Athletics', 'Student Affairs Office'][$i % 5],
                     'start_date' => now()->addDays($i % 30)->addHours(rand(1, 5)),
                     'end_date' => now()->addDays($i % 30)->addHours(rand(6, 10)),
                     'location' => "Campus Hall " . (($i % 20) + 1),
