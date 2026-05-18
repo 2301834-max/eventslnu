@@ -20,6 +20,7 @@ RUN apk add --no-cache \
     openssl \
     ca-certificates \
     oniguruma-dev \
+    sqlite-dev \
     libzip-dev \
     libpng-dev \
     freetype-dev \
