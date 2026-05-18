@@ -128,3 +128,19 @@ jobs:
           name: laravel-backend-logs
           path: laravel_backend/storage/logs
           if-no-files-found: ignore
+
+  docker-unit:
+    name: Dockerized unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: laravel_backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Laravel test container and run Unit suite
+        run: docker compose -f docker-compose.test.yml run --rm app-unit

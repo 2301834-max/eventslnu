@@ -1,0 +1,30 @@
+services:
+  app-unit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        COMPOSER_INSTALL_FLAGS: "--no-interaction --prefer-dist --no-scripts"
+    working_dir: /var/www/html
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      APP_URL: http://localhost
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/testing.sqlite
+      DB_FOREIGN_KEYS: "true"
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: "4"
+    command: >
+      sh -lc "
+        cp .env.example .env &&
+        php artisan key:generate --ansi &&
+        mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache &&
+        touch database/testing.sqlite &&
+        php artisan package:discover --ansi &&
+        php artisan config:clear --ansi &&
+        php tools/phpunit-compact.php --testsuite Unit
+      "

@@ -26,6 +26,7 @@ Workflow: `.github/workflows/backend-tests.yml`
 - Installs Composer dependencies with `--no-scripts`, then runs Laravel package discovery after `.env` exists.
 - Detects Node assets and only runs npm steps if `laravel_backend/package.json` exists.
 - Runs migrations, Pint, Composer audit, PHPUnit, and optional asset build.
+- Runs the Unit test suite inside a Dockerized Laravel container using `docker-compose.test.yml`.
 - Uploads Laravel logs if a job fails.
 
 ## Deployment Architecture
@@ -121,6 +122,7 @@ Local validation commands:
 cd laravel_backend
 php vendor/bin/pint --test
 composer test:compact
+composer test:unit:docker
 docker compose config --quiet
 ```
 

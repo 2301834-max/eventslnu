@@ -56,8 +56,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
-# Install Laravel dependencies (skip scripts since .env doesn't exist in build)
-RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts && \
+# Install Laravel dependencies (skip scripts since .env doesn't exist in build).
+# Override COMPOSER_INSTALL_FLAGS in Docker test builds to include dev tools.
+ARG COMPOSER_INSTALL_FLAGS="--no-dev --no-interaction --prefer-dist --no-scripts"
+RUN composer install $COMPOSER_INSTALL_FLAGS && \
     composer clear-cache
 
 # Create necessary directories and set permissions

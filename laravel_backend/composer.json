@@ -66,6 +66,9 @@
         "test:unit:compact": [
             "@php tools/phpunit-compact.php --testsuite Unit"
         ],
+        "test:unit:docker": [
+            "docker compose -f docker-compose.test.yml run --rm app-unit"
+        ],
         "test:feature:compact": [
             "@php tools/phpunit-compact.php --testsuite Feature"
         ],

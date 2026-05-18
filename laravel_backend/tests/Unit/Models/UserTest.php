@@ -25,6 +25,15 @@ class UserTest extends TestCase
         $this->assertFalse($admin->isStudent());
     }
 
+    public function test_is_super_admin_returns_true_only_for_super_admin_role(): void
+    {
+        $superAdmin = new User(['role' => 'super_admin']);
+        $admin = new User(['role' => 'admin']);
+
+        $this->assertTrue($superAdmin->isSuperAdmin());
+        $this->assertFalse($admin->isSuperAdmin());
+    }
+
     public function test_password_and_remember_token_are_hidden_in_array_output(): void
     {
         $user = new User([
@@ -45,6 +54,26 @@ class UserTest extends TestCase
         $user = new User;
 
         $this->assertFalse($user->isAdmin());
+        $this->assertFalse($user->isSuperAdmin());
         $this->assertFalse($user->isStudent());
+    }
+
+    public function test_institutional_email_requires_numeric_lnu_email(): void
+    {
+        $this->assertTrue(User::isInstitutionalEmail('2301360@lnu.edu.ph'));
+        $this->assertTrue(User::isInstitutionalEmail('2301360@LNU.EDU.PH'));
+
+        $this->assertFalse(User::isInstitutionalEmail('student@lnu.edu.ph'));
+        $this->assertFalse(User::isInstitutionalEmail('2301360@gmail.com'));
+        $this->assertFalse(User::isInstitutionalEmail(null));
+    }
+
+    public function test_has_institutional_email_uses_email_attribute(): void
+    {
+        $student = new User(['email' => '2301360@lnu.edu.ph']);
+        $invalid = new User(['email' => 'student@lnu.edu.ph']);
+
+        $this->assertTrue($student->hasInstitutionalEmail());
+        $this->assertFalse($invalid->hasInstitutionalEmail());
     }
 }
