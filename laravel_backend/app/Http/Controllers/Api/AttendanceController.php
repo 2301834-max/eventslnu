@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Models\AttendanceRecord;
 use App\Models\Event;
 use App\Models\QRCode;
-use App\Models\AttendanceRecord;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
@@ -18,7 +18,7 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'qr_code' => 'required|string',
-            'location' => 'nullable|string|max:255'
+            'location' => 'nullable|string|max:255',
         ]);
 
         // Find QR code (attendance-type only)
@@ -27,23 +27,23 @@ class AttendanceController extends Controller
             ->where('type', 'attendance')
             ->first();
 
-        if (!$qrCode) {
+        if (! $qrCode) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid QR code'
+                'message' => 'Invalid QR code',
             ], 404);
         }
 
         // Check if QR code is active
-        if (!$qrCode->isActive()) {
+        if (! $qrCode->isActive()) {
             return response()->json([
                 'success' => false,
-                'message' => 'QR code is ' . ($qrCode->isExpired() ? 'expired' : 'inactive')
+                'message' => 'QR code is '.($qrCode->isExpired() ? 'expired' : 'inactive'),
             ], 400);
         }
 
         // Ensure QR code is linked to a registration
-        if (!$qrCode->registration) {
+        if (! $qrCode->registration) {
             return response()->json([
                 'success' => false,
                 'message' => 'QR code is not linked to a registration.',
@@ -60,7 +60,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'User is already checked in. Please check out first.',
-                'data' => $existing->load('user', 'registration')
+                'data' => $existing->load('user', 'registration'),
             ], 400);
         }
 
@@ -80,7 +80,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Check-in successful',
-            'data' => $attendance->load('user', 'registration')
+            'data' => $attendance->load('user', 'registration'),
         ], 201);
     }
 
@@ -92,14 +92,14 @@ class AttendanceController extends Controller
         if ($attendance->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Attendance record not found'
+                'message' => 'Attendance record not found',
             ], 404);
         }
 
         if ($attendance->checked_out_at) {
             return response()->json([
                 'success' => false,
-                'message' => 'User has already checked out'
+                'message' => 'User has already checked out',
             ], 400);
         }
 
@@ -108,7 +108,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Check-out successful',
-            'data' => $attendance->load('user', 'registration')
+            'data' => $attendance->load('user', 'registration'),
         ]);
     }
 
@@ -165,7 +165,7 @@ class AttendanceController extends Controller
                 'total_attended' => $event->attendanceRecords()->count(),
                 'currently_present' => $event->attendanceRecords()->whereNull('checked_out_at')->count(),
                 'checked_out' => $event->attendanceRecords()->whereNotNull('checked_out_at')->count(),
-            ]
+            ],
         ]);
     }
 
@@ -178,16 +178,16 @@ class AttendanceController extends Controller
             ->where('user_id', $userId)
             ->first();
 
-        if (!$attendance) {
+        if (! $attendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'No attendance record found'
+                'message' => 'No attendance record found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $attendance->load('user', 'registration', 'qrCode')
+            'data' => $attendance->load('user', 'registration', 'qrCode'),
         ]);
     }
 
@@ -197,7 +197,7 @@ class AttendanceController extends Controller
     public function verifyQRCode(Request $request, Event $event): JsonResponse
     {
         $validated = $request->validate([
-            'qr_code' => 'required|string'
+            'qr_code' => 'required|string',
         ]);
 
         $qrCode = QRCode::where('code', $validated['qr_code'])
@@ -205,11 +205,11 @@ class AttendanceController extends Controller
             ->where('type', 'attendance')
             ->first();
 
-        if (!$qrCode) {
+        if (! $qrCode) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid QR code',
-                'valid' => false
+                'valid' => false,
             ]);
         }
 
@@ -227,7 +227,7 @@ class AttendanceController extends Controller
                     'is_expired' => $qrCode->isExpired(),
                     'expires_at' => $qrCode->expires_at,
                 ]
-                : null
+                : null,
         ]);
     }
 
@@ -239,7 +239,7 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'qr_codes' => 'required|array',
             'qr_codes.*' => 'string',
-            'location' => 'nullable|string|max:255'
+            'location' => 'nullable|string|max:255',
         ]);
 
         $successful = 0;
@@ -252,13 +252,14 @@ class AttendanceController extends Controller
                 ->where('type', 'attendance')
                 ->first();
 
-            if (!$qr || !$qr->isActive() || !$qr->registration) {
+            if (! $qr || ! $qr->isActive() || ! $qr->registration) {
                 $failed++;
                 $results[] = [
                     'qr_code' => $qrCode,
                     'status' => 'failed',
-                    'reason' => $qr ? 'inactive_or_unlinked' : 'not_found'
+                    'reason' => $qr ? 'inactive_or_unlinked' : 'not_found',
                 ];
+
                 continue;
             }
 
@@ -272,8 +273,9 @@ class AttendanceController extends Controller
                 $results[] = [
                     'qr_code' => $qrCode,
                     'status' => 'failed',
-                    'reason' => 'already_checked_in'
+                    'reason' => 'already_checked_in',
                 ];
+
                 continue;
             }
 
@@ -292,14 +294,14 @@ class AttendanceController extends Controller
                 $results[] = [
                     'qr_code' => $qrCode,
                     'status' => 'success',
-                    'user' => $qr->registration->user->name
+                    'user' => $qr->registration->user->name,
                 ];
             } catch (\Exception $e) {
                 $failed++;
                 $results[] = [
                     'qr_code' => $qrCode,
                     'status' => 'failed',
-                    'reason' => 'error'
+                    'reason' => 'error',
                 ];
             }
         }
@@ -311,7 +313,7 @@ class AttendanceController extends Controller
                 'successful' => $successful,
                 'failed' => $failed,
             ],
-            'results' => $results
+            'results' => $results,
         ]);
     }
 }

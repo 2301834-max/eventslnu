@@ -4,160 +4,236 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - LNU Smart Events System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --lnu-blue: #0047ab;
-            --lnu-blue-deep: #0a2f7a;
-            --lnu-blue-soft: #1664c8;
-            --lnu-yellow: #ffc107;
-            --lnu-yellow-soft: #ffe082;
+            --brand-900: #061a3a;
+            --brand-800: #082653;
+            --brand-700: #0b3f86;
+            --accent: #f6c343;
+            --accent-strong: #e6ad16;
+            --page: #eef3f8;
             --surface: #ffffff;
-            --ink: #13223a;
-            --muted: #536078;
+            --line: #d9e2ef;
+            --ink: #111827;
+            --muted: #64748b;
+            --danger-bg: #fff1f2;
+            --danger-line: #fecdd3;
+            --danger-text: #be123c;
         }
 
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            min-height: 100%;
+        }
+
         body {
-            font-family: 'Nunito Sans', sans-serif;
             min-height: 100vh;
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 32px;
             background:
-                radial-gradient(circle at 10% 15%, rgba(255, 193, 7, 0.26), transparent 22%),
-                radial-gradient(circle at 88% 18%, rgba(255, 193, 7, 0.22), transparent 18%),
-                linear-gradient(145deg, var(--lnu-blue-deep) 0%, var(--lnu-blue) 45%, var(--lnu-blue-soft) 100%);
+                linear-gradient(90deg, rgba(6, 26, 58, 0.05) 1px, transparent 1px),
+                linear-gradient(180deg, rgba(6, 26, 58, 0.05) 1px, transparent 1px),
+                var(--page);
+            background-size: 44px 44px;
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .login-shell {
-            width: 100%;
-            max-width: 980px;
-            background: var(--surface);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 30px 60px rgba(8, 29, 80, 0.3);
+            width: min(100%, 1040px);
+            min-height: 620px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+            overflow: hidden;
+            border: 1px solid rgba(8, 38, 83, 0.12);
+            border-radius: 8px;
+            background: var(--surface);
+            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.18);
         }
 
         .brand-panel {
-            background:
-                linear-gradient(160deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03)),
-                linear-gradient(135deg, #0a2f7a 0%, #0047ab 58%, #176bd0 100%);
-            color: #fff;
-            padding: 44px 38px;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 44px;
+            background:
+                linear-gradient(145deg, rgba(246, 195, 67, 0.13), transparent 44%),
+                linear-gradient(135deg, var(--brand-900), var(--brand-800) 52%, var(--brand-700));
+            color: #ffffff;
         }
 
-        .brand-panel::after {
-            content: "";
-            position: absolute;
-            width: 190px;
-            height: 190px;
-            border-radius: 50%;
-            right: -54px;
-            bottom: -54px;
-            background: radial-gradient(circle, rgba(255, 193, 7, 0.45), rgba(255, 193, 7, 0.08));
-            pointer-events: none;
-        }
-
-        .chip {
-            display: inline-block;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #12295e;
-            background: linear-gradient(135deg, var(--lnu-yellow-soft), #fff6d9);
-            border-radius: 999px;
-            padding: 7px 13px;
-            margin-bottom: 18px;
-        }
-
-        .brand-panel h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 34px;
-            line-height: 1.15;
-            margin-bottom: 14px;
-        }
-
-        .brand-panel p {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.9);
-            max-width: 320px;
-            line-height: 1.55;
-        }
-
-        .panel-points {
-            margin-top: 28px;
-            list-style: none;
-            display: grid;
-            gap: 10px;
-        }
-
-        .panel-points li {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.92);
+        .brand-mark {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
         }
 
-        .panel-points li::before {
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+        }
+
+        .brand-logo img {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+        }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-role {
+            display: block;
+            margin-top: 2px;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .hero-copy {
+            max-width: 430px;
+            padding: 72px 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
             content: "";
-            width: 8px;
-            height: 8px;
+            width: 28px;
+            height: 2px;
             border-radius: 999px;
-            background: var(--lnu-yellow);
-            box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.2);
+            background: var(--accent);
+        }
+
+        .hero-copy h1 {
+            margin: 0;
+            font-size: clamp(36px, 4.4vw, 56px);
+            line-height: 1.02;
+            letter-spacing: 0;
+        }
+
+        .hero-copy p {
+            max-width: 390px;
+            margin: 20px 0 0;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .panel-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .metric {
+            min-height: 84px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .metric strong {
+            display: block;
+            color: #ffffff;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .metric span {
+            display: block;
+            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.66);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
         }
 
         .form-panel {
-            padding: 42px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            background: #fbfdff;
         }
 
-        .form-panel h2 {
-            font-family: 'Montserrat', sans-serif;
+        .form-card {
+            width: 100%;
+            max-width: 390px;
+        }
+
+        .form-heading {
+            margin-bottom: 28px;
+        }
+
+        .form-heading h2 {
+            margin: 0;
             color: var(--ink);
-            font-size: 28px;
-            margin-bottom: 6px;
+            font-size: 30px;
+            line-height: 1.2;
+            letter-spacing: 0;
         }
 
-        .form-panel .subtitle {
+        .form-heading p {
+            margin: 9px 0 0;
             color: var(--muted);
-            font-size: 14px;
-            margin-bottom: 14px;
+            font-size: 15px;
+            line-height: 1.55;
         }
 
         .access-note {
+            display: flex;
+            gap: 10px;
             margin-bottom: 22px;
             padding: 12px 14px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, rgba(255, 193, 7, 0.22), rgba(255, 245, 209, 0.92));
-            border: 1px solid rgba(255, 193, 7, 0.4);
-            color: #5a4700;
+            border: 1px solid rgba(230, 173, 22, 0.32);
+            border-radius: 8px;
+            background: #fff9e8;
+            color: #6f5100;
             font-size: 13px;
-            line-height: 1.5;
+            font-weight: 700;
+            line-height: 1.45;
         }
 
         .alert {
-            background: #fff1f1;
-            border: 1px solid #ffcbcb;
-            color: #b91d1d;
-            border-radius: 12px;
+            margin-bottom: 18px;
             padding: 12px 14px;
-            margin-bottom: 16px;
+            border: 1px solid var(--danger-line);
+            border-radius: 8px;
+            background: var(--danger-bg);
+            color: var(--danger-text);
             font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .alert p {
+            margin: 0;
         }
 
         .alert p + p {
@@ -165,154 +241,294 @@
         }
 
         .field {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         .field label {
             display: block;
-            color: var(--ink);
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
+            color: #26364d;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap svg {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            width: 19px;
+            height: 19px;
+            transform: translateY(-50%);
+            color: #718096;
+            pointer-events: none;
         }
 
         .field input {
             width: 100%;
-            border: 1px solid #d4dceb;
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 14px;
-            color: #243550;
-            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+            min-height: 52px;
+            padding: 13px 14px 13px 46px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--ink);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+        }
+
+        .field input::placeholder {
+            color: #94a3b8;
         }
 
         .field input:focus {
-            outline: none;
-            border-color: var(--lnu-blue);
-            box-shadow: 0 0 0 4px rgba(0, 71, 171, 0.16);
-            transform: translateY(-1px);
+            border-color: var(--brand-700);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(11, 63, 134, 0.12);
         }
 
         .cta {
-            margin-top: 8px;
             width: 100%;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            color: #fff;
+            min-height: 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 6px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--brand-900);
+            color: #ffffff;
             cursor: pointer;
-            background: linear-gradient(135deg, var(--lnu-blue), #1565c0);
-            box-shadow: 0 12px 26px rgba(0, 71, 171, 0.3);
-            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 15px;
+            font-weight: 800;
+            transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
         }
 
         .cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 32px rgba(0, 71, 171, 0.36);
+            background: var(--brand-800);
+            box-shadow: 0 14px 28px rgba(6, 26, 58, 0.26);
+            transform: translateY(-1px);
         }
 
-        .cta:active {
-            transform: translateY(0);
+        .cta:focus-visible {
+            outline: 3px solid rgba(246, 195, 67, 0.55);
+            outline-offset: 3px;
         }
 
-        .switch-link {
-            margin-top: 18px;
-            text-align: center;
+        .cta svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .login-links {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 22px;
             font-size: 14px;
-            color: var(--muted);
         }
 
-        .switch-link a {
-            color: var(--lnu-blue);
+        .login-links a {
+            color: var(--brand-700);
+            font-weight: 800;
             text-decoration: none;
-            font-weight: 700;
         }
 
-        .switch-link a:hover {
+        .login-links a:hover {
             text-decoration: underline;
         }
 
-        @media (max-width: 880px) {
+        @media (max-width: 900px) {
+            body {
+                padding: 20px;
+                place-items: start center;
+            }
+
             .login-shell {
+                min-height: 0;
                 grid-template-columns: 1fr;
                 max-width: 520px;
             }
 
             .brand-panel {
-                padding: 28px 24px 22px;
+                padding: 24px;
             }
 
-            .brand-panel h1 {
-                font-size: 30px;
+            .hero-copy {
+                padding: 36px 0 24px;
+            }
+
+            .hero-copy h1 {
+                font-size: 34px;
+            }
+
+            .panel-metrics {
+                display: none;
             }
 
             .form-panel {
-                padding: 28px 24px 30px;
+                padding: 30px 24px 34px;
             }
+        }
+
+        @media (max-width: 460px) {
+            body {
+                padding: 0;
+                background: #fbfdff;
+            }
+
+            .login-shell {
+                min-height: 100vh;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .brand-panel {
+                padding: 20px;
+            }
+
+            .brand-logo {
+                width: 50px;
+                height: 50px;
+            }
+
+            .brand-logo img {
+                width: 39px;
+                height: 39px;
+            }
+
+            .hero-copy {
+                padding: 28px 0 12px;
+            }
+
+            .hero-copy h1 {
+                font-size: 30px;
+            }
+
+            .hero-copy p {
+                margin-top: 12px;
+                font-size: 14px;
+            }
+
+            .form-heading h2 {
+                font-size: 26px;
+            }
+
         }
     </style>
 </head>
 <body>
-    <div class="login-shell">
-        <div class="brand-panel">
-            <span class="chip">LNU Admin</span>
-            <h1>Smart Event Control Center</h1>
-            <p>Sign in to manage events, attendance, and student records from one secure dashboard.</p>
-            <ul class="panel-points">
-                <li>Track event participation in real time</li>
-                <li>Approve registrations quickly</li>
-                <li>Export reports with one click</li>
-            </ul>
-        </div>
-
-        <div class="form-panel">
-            <h2>Admin Login</h2>
-            <p class="subtitle">Use your administrator credentials to continue.</p>
-            <div class="access-note">
-                This page is for administrators only.
+    <main class="login-shell" aria-label="Admin sign in">
+        <section class="brand-panel" aria-label="LNU Smart Events">
+            <div class="brand-mark">
+                <div class="brand-logo">
+                    <img src="{{ asset('images/lnu-logo.png') }}" alt="LNU logo">
+                </div>
+                <div>
+                    <span class="brand-name">LNU Smart Events</span>
+                    <span class="brand-role">Admin Console</span>
+                </div>
             </div>
 
-            @if($errors->any())
-                <div class="alert">
-                    @foreach($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
+            <div class="hero-copy">
+                <span class="eyebrow">Secure access</span>
+                <h1>Manage campus events with confidence.</h1>
+                <p>Sign in to oversee registrations, attendance scans, student records, and reporting from one focused workspace.</p>
+            </div>
+
+            <div class="panel-metrics" aria-label="Platform highlights">
+                <div class="metric">
+                    <strong>Live</strong>
+                    <span>Attendance tracking</span>
                 </div>
-            @endif
-
-            <form method="POST" action="{{ route('admin.login') }}">
-                @csrf
-
-                <div class="field">
-                    <label for="email">Email Address</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value="{{ old('email') }}"
-                        placeholder="admin@lnusystem.local"
-                        required
-                        autofocus
-                    >
+                <div class="metric">
+                    <strong>QR</strong>
+                    <span>Event check-ins</span>
                 </div>
+                <div class="metric">
+                    <strong>PDF</strong>
+                    <span>Exportable reports</span>
+                </div>
+            </div>
+        </section>
 
-                <div class="field">
-                    <label for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Enter your password"
-                        required
-                    >
+        <section class="form-panel">
+            <div class="form-card">
+                <div class="form-heading">
+                    <h2>Admin Sign In</h2>
+                    <p>Use your administrator account to continue to the dashboard.</p>
                 </div>
 
-                <button type="submit" class="cta">Sign In as Admin</button>
-            </form>
-        </div>
-    </div>
+                @if($errors->any())
+                    <div class="alert" role="alert">
+                        @foreach($errors->all() as $error)
+                            <p>{{ $error }}</p>
+                        @endforeach
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('admin.login.submit') }}">
+                    @csrf
+
+                    <div class="field">
+                        <label for="email">Email address</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 6.5h16v11H4v-11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                <path d="m5 7.5 7 5.2 7-5.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                value="{{ old('email') }}"
+                                placeholder="admin@lnusystem.local"
+                                required
+                                autofocus
+                                autocomplete="email"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <div class="input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                <path d="M6 10h12v9H6v-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                <path d="M12 14v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                required
+                                autocomplete="current-password"
+                            >
+                        </div>
+                    </div>
+
+                    <button type="submit" class="cta">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M13 5 20 12l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20 12H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Sign in
+                    </button>
+                </form>
+
+                <div class="login-links">
+                    <a href="{{ route('super-admin.login') }}">SuperAdmin</a>
+                </div>
+            </div>
+        </section>
+    </main>
 </body>
 </html>

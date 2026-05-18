@@ -113,7 +113,7 @@ class QRCodeGenerationApiTest extends TestCase
     {
         return Event::create([
             'title' => $title,
-            'description' => $title . ' description',
+            'description' => $title.' description',
             'start_date' => now()->addDay(),
             'end_date' => now()->addDays(2),
             'location' => 'QR Hall',

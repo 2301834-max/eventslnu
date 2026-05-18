@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Event;
 use App\Models\AttendanceRecord;
+use App\Models\Event;
 use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -191,7 +191,7 @@ class EventTest extends TestCase
     ): array {
         return [
             'title' => $title,
-            'description' => $title . ' description',
+            'description' => $title.' description',
             'start_date' => $start ?? now()->addDay(),
             'end_date' => $end ?? now()->addDays(2),
             'location' => 'Unit Test Hall',

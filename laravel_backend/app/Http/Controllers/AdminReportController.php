@@ -10,6 +10,7 @@ use Illuminate\Http\Response;
 class AdminReportController extends Controller
 {
     private const PDF_PAGE_WIDTH = 612;
+
     private const PDF_PAGE_HEIGHT = 792;
 
     public function index(Request $request): View
@@ -22,23 +23,23 @@ class AdminReportController extends Controller
     public function exportExcel(Request $request): Response
     {
         $report = $this->buildReport($request);
-        $filename = 'admin-report-' . now()->format('Ymd-His') . '.xls';
+        $filename = 'admin-report-'.now()->format('Ymd-His').'.xls';
 
         return response()
             ->view('admin.reports.excel', $report)
             ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
 
     public function exportPdf(Request $request): Response
     {
         $report = $this->buildReport($request);
         $pdf = $this->buildStyledPdf($report);
-        $filename = 'admin-report-' . now()->format('Ymd-His') . '.pdf';
+        $filename = 'admin-report-'.now()->format('Ymd-His').'.pdf';
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -165,8 +166,8 @@ class AdminReportController extends Controller
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($nestedQuery) use ($search) {
                     $nestedQuery
-                        ->where('title', 'like', '%' . $search . '%')
-                        ->orWhere('location', 'like', '%' . $search . '%');
+                        ->where('title', 'like', '%'.$search.'%')
+                        ->orWhere('location', 'like', '%'.$search.'%');
                 });
             });
     }
@@ -218,8 +219,8 @@ class AdminReportController extends Controller
         $this->addPdfFilledRect($page, 0, 0, self::PDF_PAGE_WIDTH, 84, [15, 23, 42]);
         $this->addPdfText($page, 'LNU Smart Events System', 40, 38, 22, [255, 255, 255], true);
         $this->addPdfText($page, $continued ? 'Admin Report Export - Continued' : 'Admin Report Export', 40, 60, 11, [191, 219, 254]);
-        $this->addPdfText($page, 'Generated ' . $report['generatedAt']->format('M d, Y h:i A'), 408, 38, 10, [226, 232, 240], true);
-        $this->addPdfText($page, 'Page ' . $pageNumber, 520, 60, 10, [191, 219, 254], true);
+        $this->addPdfText($page, 'Generated '.$report['generatedAt']->format('M d, Y h:i A'), 408, 38, 10, [226, 232, 240], true);
+        $this->addPdfText($page, 'Page '.$pageNumber, 520, 60, 10, [191, 219, 254], true);
     }
 
     private function drawSummarySection(array &$page, array $report): void
@@ -228,7 +229,7 @@ class AdminReportController extends Controller
             ['label' => 'Total Events', 'value' => (string) $report['summary']['total_events'], 'color' => [224, 231, 255]],
             ['label' => 'Registrations', 'value' => (string) $report['summary']['total_registrations'], 'color' => [220, 252, 231]],
             ['label' => 'Attendance', 'value' => (string) $report['summary']['attendance_records'], 'color' => [254, 249, 195]],
-            ['label' => 'Avg Rate', 'value' => number_format($report['summary']['average_attendance_rate'], 2) . '%', 'color' => [254, 226, 226]],
+            ['label' => 'Avg Rate', 'value' => number_format($report['summary']['average_attendance_rate'], 2).'%', 'color' => [254, 226, 226]],
         ];
 
         $this->addPdfText($page, 'Performance Snapshot', 40, 112, 12, [30, 41, 59], true);
@@ -267,7 +268,7 @@ class AdminReportController extends Controller
         $x = 40;
 
         foreach ($report['statusCounts'] as $status => $count) {
-            $label = ucfirst($status) . ': ' . $count;
+            $label = ucfirst($status).': '.$count;
             $width = 94;
 
             $this->addPdfFilledRect($page, $x, 338, $width, 20, [238, 242, 255]);
@@ -301,7 +302,7 @@ class AdminReportController extends Controller
     {
         $fill = $index % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
         $attendanceRate = $event->approved_registrations_count > 0
-            ? number_format(($event->attendance_records_count / $event->approved_registrations_count) * 100, 1) . '%'
+            ? number_format(($event->attendance_records_count / $event->approved_registrations_count) * 100, 1).'%'
             : '0.0%';
 
         $this->addPdfFilledRect($page, 40, $top, 532, 22, $fill);
@@ -334,12 +335,12 @@ class AdminReportController extends Controller
 
             $content = implode("\n", $page['commands']);
 
-            $objects[$pageObjectId] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " . self::PDF_PAGE_WIDTH . ' ' . self::PDF_PAGE_HEIGHT . "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {$contentObjectId} 0 R >>";
-            $objects[$contentObjectId] = "<< /Length " . strlen($content) . " >>\nstream\n{$content}\nendstream";
+            $objects[$pageObjectId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '.self::PDF_PAGE_WIDTH.' '.self::PDF_PAGE_HEIGHT."] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {$contentObjectId} 0 R >>";
+            $objects[$contentObjectId] = '<< /Length '.strlen($content)." >>\nstream\n{$content}\nendstream";
         }
 
         $kids = implode(' ', array_map(fn (int $id) => "{$id} 0 R", $pageObjectIds));
-        $objects[2] = '<< /Type /Pages /Kids [ ' . $kids . ' ] /Count ' . count($pageObjectIds) . ' >>';
+        $objects[2] = '<< /Type /Pages /Kids [ '.$kids.' ] /Count '.count($pageObjectIds).' >>';
 
         ksort($objects);
 
@@ -348,18 +349,18 @@ class AdminReportController extends Controller
 
         foreach ($objects as $objectId => $body) {
             $offsets[$objectId] = strlen($pdf);
-            $pdf .= $objectId . " 0 obj\n" . $body . "\nendobj\n";
+            $pdf .= $objectId." 0 obj\n".$body."\nendobj\n";
         }
 
         $xrefOffset = strlen($pdf);
-        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n";
         $pdf .= "0000000000 65535 f \n";
 
         foreach (array_keys($objects) as $objectId) {
             $pdf .= sprintf("%010d 00000 n \n", $offsets[$objectId]);
         }
 
-        $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+        $pdf .= "trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\n";
         $pdf .= "startxref\n{$xrefOffset}\n%%EOF";
 
         return $pdf;
@@ -370,7 +371,7 @@ class AdminReportController extends Controller
         $bottom = self::PDF_PAGE_HEIGHT - $top - $height;
 
         $page['commands'][] = sprintf(
-            "q %.3F %.3F %.3F rg %.2F %.2F %.2F %.2F re f Q",
+            'q %.3F %.3F %.3F rg %.2F %.2F %.2F %.2F re f Q',
             $rgb[0] / 255,
             $rgb[1] / 255,
             $rgb[2] / 255,
@@ -386,7 +387,7 @@ class AdminReportController extends Controller
         $bottom = self::PDF_PAGE_HEIGHT - $top - $height;
 
         $page['commands'][] = sprintf(
-            "q 0.7 w %.3F %.3F %.3F RG %.2F %.2F %.2F %.2F re S Q",
+            'q 0.7 w %.3F %.3F %.3F RG %.2F %.2F %.2F %.2F re S Q',
             $rgb[0] / 255,
             $rgb[1] / 255,
             $rgb[2] / 255,
@@ -404,7 +405,7 @@ class AdminReportController extends Controller
         $y = self::PDF_PAGE_HEIGHT - $top;
 
         $page['commands'][] = sprintf(
-            "BT /%s %d Tf %.3F %.3F %.3F rg 1 0 0 1 %.2F %.2F Tm (%s) Tj ET",
+            'BT /%s %d Tf %.3F %.3F %.3F rg 1 0 0 1 %.2F %.2F Tm (%s) Tj ET',
             $font,
             $size,
             $rgb[0] / 255,
@@ -431,7 +432,7 @@ class AdminReportController extends Controller
             return $value;
         }
 
-        return substr($value, 0, max(0, $length - 3)) . '...';
+        return substr($value, 0, max(0, $length - 3)).'...';
     }
 
     private function statusFilterLabel(array $filters): string

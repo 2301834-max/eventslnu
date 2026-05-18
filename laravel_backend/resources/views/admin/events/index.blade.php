@@ -62,7 +62,7 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Schedule</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Status</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Registrations</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Actions</th>
+                        <th class="w-72 px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -80,7 +80,18 @@
                         <tr class="hover:bg-slate-50/80">
                             <td class="px-8 py-5 align-top">
                                 <div class="flex items-center gap-4">
-                                    <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" class="h-16 w-24 rounded-xl object-cover">
+                                    <div class="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-700 via-brand-600 to-sky-500">
+                                        @if($event->poster)
+                                            <img
+                                                src="{{ $event->poster_url }}"
+                                                alt="{{ $event->title }} poster"
+                                                class="h-full w-full object-cover"
+                                                onerror="this.closest('div').innerHTML='<span class=&quot;text-xs font-bold uppercase tracking-[0.2em] text-white&quot;>POSTER</span>';"
+                                            >
+                                        @else
+                                            <span class="text-xs font-bold uppercase tracking-[0.2em] text-white">POSTER</span>
+                                        @endif
+                                    </div>
                                     <div>
                                         <p class="text-sm font-semibold text-slate-900">{{ $event->title }}</p>
                                         <p class="mt-2 text-sm text-slate-500">{{ $event->location }}</p>
@@ -103,24 +114,28 @@
                                 <span class="font-semibold">{{ $event->registrations_count }}</span>
                                 <span class="text-slate-400">/ {{ $event->max_participants }}</span>
                             </td>
-                            <td class="px-6 py-5 text-sm">
-                                <div class="flex flex-wrap gap-3">
-                                    <a href="{{ route('admin.events.show', $event) }}" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-100">
-                                        View
-                                    </a>
-                                    @if($event->allowsAdminChanges())
-                                        <a href="{{ route('admin.events.edit', $event) }}" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 font-semibold text-amber-700 transition hover:bg-amber-100">
+                            <td class="w-72 px-6 py-5 text-sm">
+                                @if($event->allowsAdminChanges())
+                                    <div class="inline-flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                                        <a href="{{ route('admin.events.show', $event) }}" class="inline-flex h-10 w-20 items-center justify-center border-r border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                                            View
+                                        </a>
+                                        <a href="{{ route('admin.events.edit', $event) }}" class="inline-flex h-10 w-20 items-center justify-center border-r border-slate-200 px-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-50">
                                             Edit
                                         </a>
-                                        <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this event?')">
+                                        <form method="POST" action="{{ route('admin.events.destroy', $event) }}" class="inline-flex" onsubmit="return confirm('Are you sure you want to delete this event?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 font-semibold text-rose-700 transition hover:bg-rose-100">
+                                            <button type="submit" class="inline-flex h-10 w-20 items-center justify-center px-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
                                                 Delete
                                             </button>
                                         </form>
-                                    @endif
-                                </div>
+                                    </div>
+                                @else
+                                    <a href="{{ route('admin.events.show', $event) }}" class="inline-flex h-10 w-20 items-center justify-center rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                                        View
+                                    </a>
+                                @endif
                             </td>
                         </tr>
                     @empty

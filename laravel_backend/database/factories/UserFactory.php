@@ -23,15 +23,15 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $slug = fake()->unique()->userName();
+        $studentId = fake()->unique()->numerify('######');
 
         return [
             'name' => fake()->name(),
-            'email' => $slug . '@lnu.edu.ph',
+            'email' => $studentId.'@lnu.edu.ph',
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'student_id' => '2026-' . fake()->unique()->numerify('####'),
+            'student_id' => $studentId,
         ];
     }
 

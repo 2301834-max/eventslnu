@@ -36,7 +36,7 @@ class ReportApiTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->get("/api/events/{$event->id}/reports/attendance/csv?from_date=" . now()->subHours(4)->toDateTimeString());
+        $response = $this->get("/api/events/{$event->id}/reports/attendance/csv?from_date=".now()->subHours(4)->toDateTimeString());
 
         $content = $response->streamedContent();
 

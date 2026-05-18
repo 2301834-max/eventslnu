@@ -42,7 +42,7 @@ class UserTest extends TestCase
 
     public function test_role_helpers_return_false_when_role_is_missing(): void
     {
-        $user = new User();
+        $user = new User;
 
         $this->assertFalse($user->isAdmin());
         $this->assertFalse($user->isStudent());

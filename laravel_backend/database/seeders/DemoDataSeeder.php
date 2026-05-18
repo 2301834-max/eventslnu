@@ -51,7 +51,7 @@ class DemoDataSeeder extends Seeder
                     'name' => "Student {$i}",
                     'password' => Hash::make('password123'),
                     'role' => 'student',
-                    'student_id' => '2026-' . str_pad($i + 2, 4, '0', STR_PAD_LEFT),
+                    'student_id' => '2026-'.str_pad($i + 2, 4, '0', STR_PAD_LEFT),
                 ]
             );
         })->values();
@@ -84,7 +84,7 @@ class DemoDataSeeder extends Seeder
                     'organization' => ['Student Council', 'College of Arts and Sciences', 'Engineering Society', 'LNU Athletics', 'Student Affairs Office'][$i % 5],
                     'start_date' => now()->addDays($i % 30)->addHours(rand(1, 5)),
                     'end_date' => now()->addDays($i % 30)->addHours(rand(6, 10)),
-                    'location' => "Campus Hall " . (($i % 20) + 1),
+                    'location' => 'Campus Hall '.(($i % 20) + 1),
                     'max_participants' => rand(30, 300),
                     'status' => ['draft', 'published', 'ongoing', 'completed', 'cancelled'][$i % 5],
                     'created_by' => $admin->id,
@@ -111,7 +111,7 @@ class DemoDataSeeder extends Seeder
                     'approved_by' => $admin->id,
                     'approved_at' => now(),
                     // ✅ GUARANTEED UNIQUE
-                    'registration_number' => 'REG-' . Str::uuid(),
+                    'registration_number' => 'REG-'.Str::uuid(),
                 ]
             );
 
@@ -156,8 +156,7 @@ class DemoDataSeeder extends Seeder
             // UPDATE ATTENDEES COUNT
             // =====================
             $event->update([
-                'current_attendees' =>
-                    AttendanceRecord::where('event_id', $event->id)->count(),
+                'current_attendees' => AttendanceRecord::where('event_id', $event->id)->count(),
             ]);
         }
     }
@@ -167,7 +166,7 @@ class DemoDataSeeder extends Seeder
     // =====================
     private function seedRegistrationQr(Event $event): void
     {
-        $code = "EVTREG|{$event->id}|" . Str::slug($event->title);
+        $code = "EVTREG|{$event->id}|".Str::slug($event->title);
 
         QRCode::firstOrCreate(
             [

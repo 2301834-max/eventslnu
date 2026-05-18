@@ -21,6 +21,10 @@ class AdminUserSeeder extends Seeder
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
                 'student_id' => null,
+                'username' => 'admin',
+                'organization_type' => 'University Office',
+                'organization_name' => 'Leyte Normal University',
+                'is_active' => true,
             ]
         );
 
@@ -31,6 +35,7 @@ class AdminUserSeeder extends Seeder
                 'password' => Hash::make('password123'),
                 'role' => 'student',
                 'student_id' => 'LOCAL-0001',
+                'is_active' => true,
             ]
         );
     }

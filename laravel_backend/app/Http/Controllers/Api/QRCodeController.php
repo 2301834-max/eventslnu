@@ -54,7 +54,7 @@ class QRCodeController extends Controller
             ->update(['status' => 'revoked']);
 
         // Generate a new secure random code string
-        $code = Str::uuid()->toString() . '|' . Str::random(32);
+        $code = Str::uuid()->toString().'|'.Str::random(32);
 
         $qr = QRCode::create([
             'registration_id' => $registration->id,
@@ -80,4 +80,3 @@ class QRCodeController extends Controller
         ], 201);
     }
 }
-

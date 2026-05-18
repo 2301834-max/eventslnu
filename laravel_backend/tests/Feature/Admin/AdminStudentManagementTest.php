@@ -31,8 +31,8 @@ class AdminStudentManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.students.store'), [
             'name' => 'Created Student',
-            'email' => 'created-student@lnu.edu.ph',
-            'student_id' => '2026-2101',
+            'email' => '2302101@lnu.edu.ph',
+            'student_id' => '2302101',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -41,27 +41,27 @@ class AdminStudentManagementTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'name' => 'Created Student',
-            'email' => 'created-student@lnu.edu.ph',
-            'student_id' => '2026-2101',
+            'email' => '2302101@lnu.edu.ph',
+            'student_id' => '2302101',
             'role' => 'student',
         ]);
     }
 
-    public function test_admin_can_store_student_with_six_character_password(): void
+    public function test_admin_can_store_student_with_valid_password(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->post(route('admin.students.store'), [
             'name' => 'Short Password Student',
-            'email' => 'short-password@lnu.edu.ph',
-            'student_id' => '2026-2102',
-            'password' => 'secret',
-            'password_confirmation' => 'secret',
+            'email' => '2302102@lnu.edu.ph',
+            'student_id' => '2302102',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
         ])->assertRedirect(route('admin.students.index'));
 
         $this->assertDatabaseHas('users', [
-            'email' => 'short-password@lnu.edu.ph',
-            'student_id' => '2026-2102',
+            'email' => '2302102@lnu.edu.ph',
+            'student_id' => '2302102',
         ]);
     }
 

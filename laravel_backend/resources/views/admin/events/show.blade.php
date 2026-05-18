@@ -24,7 +24,18 @@
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">Event Information</h2>
                 
-                <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" class="w-full h-64 object-cover rounded-lg mb-4">
+                <div class="mb-4 flex h-64 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-blue-900 via-blue-700 to-sky-500">
+                    @if($event->poster)
+                        <img
+                            src="{{ $event->poster_url }}"
+                            alt="{{ $event->title }} poster"
+                            class="h-full w-full object-cover"
+                            onerror="this.closest('div').innerHTML='<span class=&quot;text-sm font-bold uppercase tracking-[0.25em] text-white&quot;>POSTER</span>';"
+                        >
+                    @else
+                        <span class="text-sm font-bold uppercase tracking-[0.25em] text-white">POSTER</span>
+                    @endif
+                </div>
 
                 <div class="space-y-4">
                     <div>

@@ -14,7 +14,8 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public const INSTITUTIONAL_EMAIL_DOMAIN = 'lnu.edu.ph';
-    public const INSTITUTIONAL_EMAIL_REGEX = '/^[A-Z0-9._%+-]+@lnu\.edu\.ph$/i';
+
+    public const INSTITUTIONAL_EMAIL_REGEX = '/^\d{1,7}@lnu\.edu\.ph$/i';
 
     /**
      * The attributes that are mass assignable.
@@ -23,10 +24,15 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
         'role',
         'student_id',
+        'organization_type',
+        'organization_name',
+        'is_active',
+        'last_login_at',
     ];
 
     /**
@@ -49,6 +55,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -73,12 +81,22 @@ class User extends Authenticatable
         return $this->hasMany(Registration::class, 'approved_by');
     }
 
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
     /**
      * Role checking methods
      */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
     }
 
     public function isStudent(): bool
@@ -88,7 +106,7 @@ class User extends Authenticatable
 
     public static function isInstitutionalEmail(?string $email): bool
     {
-        if (!is_string($email) || $email === '') {
+        if (! is_string($email) || $email === '') {
             return false;
         }
 

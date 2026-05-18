@@ -15,12 +15,12 @@ class LoginApiTest extends TestCase
     {
         User::factory()->create([
             'name' => 'Login User',
-            'email' => 'login@lnu.edu.ph',
+            'email' => '2301101@lnu.edu.ph',
             'password' => Hash::make('password123'),
         ]);
 
         $response = $this->post('/api/login', [
-            'email' => 'login@lnu.edu.ph',
+            'email' => '2301101@lnu.edu.ph',
             'password' => 'password123',
         ]);
 
@@ -29,7 +29,7 @@ class LoginApiTest extends TestCase
                 'message' => 'Login successful',
                 'user' => [
                     'name' => 'Login User',
-                    'email' => 'login@lnu.edu.ph',
+                    'email' => '2301101@lnu.edu.ph',
                 ],
             ])
             ->assertJsonStructure([
@@ -56,12 +56,12 @@ class LoginApiTest extends TestCase
     public function test_api_login_rejects_invalid_credentials(): void
     {
         User::factory()->create([
-            'email' => 'user@lnu.edu.ph',
+            'email' => '2301102@lnu.edu.ph',
             'password' => Hash::make('password123'),
         ]);
 
         $response = $this->post('/api/login', [
-            'email' => 'user@lnu.edu.ph',
+            'email' => '2301102@lnu.edu.ph',
             'password' => 'wrongpassword',
         ]);
 
@@ -80,6 +80,6 @@ class LoginApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email'])
-            ->assertJsonPath('errors.email.0', 'Please use your institutional email ending in @lnu.edu.ph.');
+            ->assertJsonPath('errors.email.0', 'Email must use your student number with @lnu.edu.ph, for example 2301360@lnu.edu.ph.');
     }
 }

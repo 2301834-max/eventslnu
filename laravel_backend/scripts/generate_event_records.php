@@ -12,11 +12,11 @@ $perYear = intdiv($totalRecords, count($years));
 $remainder = $totalRecords % count($years);
 $ongoingRecords = 10;
 
-$outputDirectory = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'generated';
-$outputFile = $outputDirectory . DIRECTORY_SEPARATOR . 'event_records_3000.csv';
+$outputDirectory = dirname(__DIR__).DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'generated';
+$outputFile = $outputDirectory.DIRECTORY_SEPARATOR.'event_records_3000.csv';
 
-if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0777, true) && !is_dir($outputDirectory)) {
-    fwrite(STDERR, "Unable to create output directory: {$outputDirectory}" . PHP_EOL);
+if (! is_dir($outputDirectory) && ! mkdir($outputDirectory, 0777, true) && ! is_dir($outputDirectory)) {
+    fwrite(STDERR, "Unable to create output directory: {$outputDirectory}".PHP_EOL);
     exit(1);
 }
 
@@ -44,7 +44,7 @@ shuffle($records);
 $handle = fopen($outputFile, 'wb');
 
 if ($handle === false) {
-    fwrite(STDERR, "Unable to open output file: {$outputFile}" . PHP_EOL);
+    fwrite(STDERR, "Unable to open output file: {$outputFile}".PHP_EOL);
     exit(1);
 }
 
@@ -75,11 +75,11 @@ foreach ($records as $record) {
 
 ksort($yearSummary);
 
-fwrite(STDOUT, "Generated {$totalRecords} event records." . PHP_EOL);
-fwrite(STDOUT, "Current date used for status calculation: " . $currentDate->format('Y-m-d') . PHP_EOL);
-fwrite(STDOUT, "Output file: {$outputFile}" . PHP_EOL);
-fwrite(STDOUT, "Year distribution: " . json_encode($yearSummary, JSON_UNESCAPED_SLASHES) . PHP_EOL);
-fwrite(STDOUT, "Status distribution: " . json_encode($statusSummary, JSON_UNESCAPED_SLASHES) . PHP_EOL);
+fwrite(STDOUT, "Generated {$totalRecords} event records.".PHP_EOL);
+fwrite(STDOUT, 'Current date used for status calculation: '.$currentDate->format('Y-m-d').PHP_EOL);
+fwrite(STDOUT, "Output file: {$outputFile}".PHP_EOL);
+fwrite(STDOUT, 'Year distribution: '.json_encode($yearSummary, JSON_UNESCAPED_SLASHES).PHP_EOL);
+fwrite(STDOUT, 'Status distribution: '.json_encode($statusSummary, JSON_UNESCAPED_SLASHES).PHP_EOL);
 
 function randomDateInYear(int $year, DateTimeZone $timezone, ?DateTimeImmutable $excludeDate = null): DateTimeImmutable
 {

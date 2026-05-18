@@ -306,7 +306,7 @@ class RegistrationApiTest extends TestCase
     {
         return Event::create([
             'title' => $title,
-            'description' => $title . ' description',
+            'description' => $title.' description',
             'start_date' => now()->addDays(3),
             'end_date' => now()->addDays(3)->addHours(4),
             'location' => 'Main Hall',

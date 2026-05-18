@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Event;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -18,9 +18,11 @@ class EventController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Event::with('creator');
+        $visibleEventsQuery = Event::query();
 
-        if (!$request->user()?->isAdmin()) {
+        if (! $request->user()?->isAdmin()) {
             $query->whereNotIn('status', ['draft', 'cancelled']);
+            $visibleEventsQuery->whereNotIn('status', ['draft', 'cancelled']);
         }
 
         // Filter by status
@@ -53,17 +55,35 @@ class EventController extends Controller
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        $events = $query->paginate($request->get('per_page', 15));
+        $perPage = $request->user()?->isAdmin()
+            ? min(max((int) $request->get('per_page', 200), 1), 200)
+            : 200;
+        $events = $query->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'data' => $events->items(),
+            'summary' => [
+                'available' => (clone $visibleEventsQuery)
+                    ->whereIn('status', ['published', 'ongoing'])
+                    ->where('end_date', '>=', now())
+                    ->count(),
+                'upcoming' => (clone $visibleEventsQuery)
+                    ->where('start_date', '>', now())
+                    ->whereIn('status', ['published', 'ongoing'])
+                    ->count(),
+                'today' => (clone $visibleEventsQuery)
+                    ->whereDate('start_date', now()->toDateString())
+                    ->whereIn('status', ['published', 'ongoing'])
+                    ->count(),
+                'total_visible' => (clone $visibleEventsQuery)->count(),
+            ],
             'pagination' => [
                 'total' => $events->total(),
                 'per_page' => $events->perPage(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),
-            ]
+            ],
         ]);
     }
 
@@ -77,6 +97,7 @@ class EventController extends Controller
         }
 
         $this->normalizeEventPayload($request);
+        $this->normalizePosterUpload($request);
 
         $validated = $request->validate([
             'title' => 'required|string|unique:events|max:255',
@@ -86,15 +107,18 @@ class EventController extends Controller
             'end_date' => 'required|date|after:start_date',
             'location' => 'required|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
+            'poster' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
             'event_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
         ]);
+        unset($validated['poster']);
 
         $validated['created_by'] = auth()->id();
         $validated['status'] = 'draft';
 
         // Handle image upload
-        if ($request->hasFile('event_image')) {
-            $validated['event_image'] = $this->storeEventImage($request);
+        if ($this->hasPosterUpload($request)) {
+            $posterPath = $this->storePoster($request);
+            $validated['event_image'] = $posterPath;
         }
 
         $event = Event::create($validated);
@@ -102,7 +126,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event created successfully',
-            'data' => $event->load('creator')
+            'data' => $event->load('creator'),
         ], 201);
     }
 
@@ -113,7 +137,7 @@ class EventController extends Controller
     {
         $user = request()->user();
 
-        if (!$user?->isAdmin() && in_array($event->status, ['draft', 'cancelled'], true)) {
+        if (! $user?->isAdmin() && in_array($event->status, ['draft', 'cancelled'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Event not found',
@@ -141,9 +165,9 @@ class EventController extends Controller
                 'approved_registrations' => $event->getApprovedRegistrationsCount(),
                 'pending_registrations' => $event->registrations()->pending()->count(),
                 'total_attended' => $event->getAttendanceCount(),
-                'attendance_rate' => $event->getAttendanceRate() . '%',
+                'attendance_rate' => $event->getAttendanceRate().'%',
                 'is_registration_full' => $event->isRegistrationFull(),
-            ]
+            ],
         ]);
     }
 
@@ -157,9 +181,10 @@ class EventController extends Controller
         }
 
         $this->normalizeEventPayload($request);
+        $this->normalizePosterUpload($request);
 
         $validated = $request->validate([
-            'title' => 'nullable|string|unique:events,title,' . $event->id . '|max:255',
+            'title' => 'nullable|string|unique:events,title,'.$event->id.'|max:255',
             'organization' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'start_date' => 'nullable|date|after:now',
@@ -167,16 +192,18 @@ class EventController extends Controller
             'location' => 'nullable|string|max:255',
             'max_participants' => 'nullable|integer|min:0',
             'status' => 'nullable|in:draft,published,ongoing,completed,cancelled',
+            'poster' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
             'event_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:20480',
         ]);
+        unset($validated['poster']);
 
         // Handle image upload
-        if ($request->hasFile('event_image')) {
-            // Delete old image if exists
-            if ($event->event_image) {
-                Storage::disk('public')->delete($event->event_image);
-            }
-            $validated['event_image'] = $this->storeEventImage($request);
+        if ($this->hasPosterUpload($request)) {
+            $newPosterPath = $this->storePoster($request);
+
+            $this->deletePoster($event);
+
+            $validated['event_image'] = $newPosterPath;
         }
 
         $event->update($validated);
@@ -184,7 +211,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event updated successfully',
-            'data' => $event->load('creator')
+            'data' => $event->load('creator'),
         ]);
     }
 
@@ -201,7 +228,7 @@ class EventController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Event deleted successfully'
+            'message' => 'Event deleted successfully',
         ]);
     }
 
@@ -217,7 +244,7 @@ class EventController extends Controller
         if ($event->status !== 'draft') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only draft events can be published'
+                'message' => 'Only draft events can be published',
             ], 400);
         }
 
@@ -226,7 +253,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event published successfully',
-            'data' => $event
+            'data' => $event,
         ]);
     }
 
@@ -240,7 +267,7 @@ class EventController extends Controller
         }
 
         $validated = $request->validate([
-            'reason' => 'nullable|string'
+            'reason' => 'nullable|string',
         ]);
 
         $event->update(['status' => 'cancelled']);
@@ -248,7 +275,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event cancelled successfully',
-            'data' => $event
+            'data' => $event,
         ]);
     }
 
@@ -261,10 +288,10 @@ class EventController extends Controller
             return $response;
         }
 
-        if (!in_array($event->status, ['published', 'draft'])) {
+        if (! in_array($event->status, ['published', 'draft'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Event cannot be started'
+                'message' => 'Event cannot be started',
             ], 400);
         }
 
@@ -273,7 +300,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event started successfully',
-            'data' => $event
+            'data' => $event,
         ]);
     }
 
@@ -291,7 +318,7 @@ class EventController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Event completed successfully',
-            'data' => $event
+            'data' => $event,
         ]);
     }
 
@@ -309,25 +336,49 @@ class EventController extends Controller
 
     private function normalizeEventPayload(Request $request): void
     {
-        if ($request->filled('capacity') && !$request->filled('max_participants')) {
+        if ($request->filled('capacity') && ! $request->filled('max_participants')) {
             $request->merge(['max_participants' => $request->input('capacity')]);
         }
     }
 
-    private function storeEventImage(Request $request): string
+    private function storePoster(Request $request): string
     {
         try {
-            $path = $request->file('event_image')->store('events', 'public');
+            $path = $request->file('poster')
+                ? $request->file('poster')->store('event-posters', 'public')
+                : $request->file('event_image')->store('event-posters', 'public');
         } catch (Throwable) {
             $path = false;
         }
 
-        if (!$path) {
+        if (! $path || ! Storage::disk('public')->exists($path)) {
             throw ValidationException::withMessages([
-                'event_image' => ['The event poster could not be uploaded. Please try again.'],
+                'poster' => ['The event poster could not be uploaded. Please try again.'],
             ]);
         }
 
         return $path;
+    }
+
+    private function normalizePosterUpload(Request $request): void
+    {
+        if (! $request->hasFile('poster') && $request->hasFile('event_image')) {
+            $request->files->set('poster', $request->file('event_image'));
+        }
+    }
+
+    private function hasPosterUpload(Request $request): bool
+    {
+        return $request->file('poster')?->isValid()
+            || $request->file('event_image')?->isValid();
+    }
+
+    private function deletePoster(Event $event): void
+    {
+        $poster = $event->getRawOriginal('event_image');
+
+        if ($poster && ! filter_var($poster, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($poster)) {
+            Storage::disk('public')->delete($poster);
+        }
     }
 }

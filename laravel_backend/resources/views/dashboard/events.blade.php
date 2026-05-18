@@ -34,9 +34,10 @@
                 <textarea id="eventDescription" name="description" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; min-height: 100px;"></textarea>
             </div>
             <div style="margin-bottom: 1rem;">
-                <label for="eventImage">Event Poster</label>
-                <img id="eventImagePreview" src="{{ asset('images/event-placeholder.svg') }}" alt="Event poster preview" style="display: block; width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; margin-bottom: 0.75rem;">
-                <input type="file" id="eventImage" name="event_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="width: 100%; padding: 0.75rem; border: 1px dashed #ddd; border-radius: 4px;">
+                <label for="eventPoster">Event Poster</label>
+                <div id="eventPosterPlaceholder" style="display: flex; width: 100%; height: 160px; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #eee; margin-bottom: 0.75rem; background: linear-gradient(135deg, #1d4ed8, #0284c7); color: white; font-weight: 700; letter-spacing: 0.2em;">POSTER</div>
+                <img id="eventImagePreview" src="" alt="Event poster preview" style="display: none; width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; margin-bottom: 0.75rem;">
+                <input type="file" id="eventPoster" name="poster" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="width: 100%; padding: 0.75rem; border: 1px dashed #ddd; border-radius: 4px;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
@@ -96,8 +97,12 @@
                 const startDate = new Date(event.start_date).toLocaleString();
                 const statusColor = event.status === 'draft' ? 'info' : event.status === 'published' ? 'success' : 'warning';
                 
+                const posterHtml = event.poster_url
+                    ? `<img src="${event.poster_url}" alt="${event.title} poster" style="width: 72px; height: 48px; object-fit: cover; border-radius: 6px;" onerror="this.outerHTML='<div style=&quot;display:flex;width:72px;height:48px;align-items:center;justify-content:center;border-radius:6px;background:#1d4ed8;color:white;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;&quot;>POSTER</div>';">`
+                    : '<div style="display:flex;width:72px;height:48px;align-items:center;justify-content:center;border-radius:6px;background:#1d4ed8;color:white;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;">POSTER</div>';
+
                 html += `<tr>
-                    <td><img src="${event.event_image_url}" alt="${event.title} poster" style="width: 72px; height: 48px; object-fit: cover; border-radius: 6px;"></td>
+                    <td>${posterHtml}</td>
                     <td><strong>${event.title}</strong></td>
                     <td>${event.organization || 'Not specified'}</td>
                     <td>${event.location}</td>
@@ -128,7 +133,9 @@
     function closeCreateEventModal() {
         document.getElementById('createEventModal').style.display = 'none';
         document.getElementById('createEventForm').reset();
-        document.getElementById('eventImagePreview').src = '{{ asset('images/event-placeholder.svg') }}';
+        document.getElementById('eventImagePreview').src = '';
+        document.getElementById('eventImagePreview').style.display = 'none';
+        document.getElementById('eventPosterPlaceholder').style.display = 'flex';
     }
     
     function deleteEvent(eventId) {
@@ -164,9 +171,9 @@
         formData.append('start_date', new Date(document.getElementById('eventStartDate').value).toISOString());
         formData.append('end_date', new Date(document.getElementById('eventEndDate').value).toISOString());
 
-        const poster = document.getElementById('eventImage').files[0];
+        const poster = document.getElementById('eventPoster').files[0];
         if (poster) {
-            formData.append('event_image', poster);
+            formData.append('poster', poster);
         }
         
         fetch(`${API_BASE_URL}/events`, {
@@ -195,15 +202,20 @@
         loadEvents();
     });
 
-    document.getElementById('eventImage').addEventListener('change', function() {
+    document.getElementById('eventPoster').addEventListener('change', function() {
         const file = this.files[0];
         const preview = document.getElementById('eventImagePreview');
+        const placeholder = document.getElementById('eventPosterPlaceholder');
 
         if (!file) {
-            preview.src = '{{ asset('images/event-placeholder.svg') }}';
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
             return;
         }
 
+        placeholder.style.display = 'none';
+        preview.style.display = 'block';
         preview.src = URL.createObjectURL(file);
         preview.onload = () => URL.revokeObjectURL(preview.src);
     });

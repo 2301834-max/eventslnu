@@ -14,7 +14,11 @@
         <!-- Event Details Card -->
         <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem;">
             <h3 style="margin-bottom: 1.5rem; color: #333;">Event Details</h3>
-            <img src="{{ $event->event_image_url }}" alt="{{ $event->title }} poster" style="width: 100%; height: 260px; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem;">
+            @if($event->poster)
+                <img src="{{ $event->poster_url }}" alt="{{ $event->title }} poster" style="width: 100%; height: 260px; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem;" onerror="this.outerHTML='<div style=&quot;display:flex;width:100%;height:260px;align-items:center;justify-content:center;border-radius:8px;margin-bottom:1.5rem;background:linear-gradient(135deg,#1d4ed8,#0284c7);color:white;font-weight:700;letter-spacing:0.2em;&quot;>POSTER</div>';">
+            @else
+                <div style="display: flex; width: 100%; height: 260px; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 1.5rem; background: linear-gradient(135deg, #1d4ed8, #0284c7); color: white; font-weight: 700; letter-spacing: 0.2em;">POSTER</div>
+            @endif
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div>

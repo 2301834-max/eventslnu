@@ -84,10 +84,9 @@
         $adminNavItems = [
             ['label' => 'Overview', 'route' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'icon' => 'layout-dashboard'],
             ['label' => 'Events', 'route' => route('admin.events.index'), 'active' => request()->routeIs('admin.events.*') && ! request()->routeIs('admin.events.create'), 'icon' => 'calendar-days'],
-            ['label' => 'Students', 'route' => route('admin.students.index'), 'active' => request()->routeIs('admin.students.index') || request()->routeIs('admin.students.show') || request()->routeIs('admin.students.edit'), 'icon' => 'graduation-cap'],
+            ['label' => 'Students', 'route' => route('admin.students.index'), 'active' => request()->routeIs('admin.students.*'), 'icon' => 'graduation-cap'],
             ['label' => 'Registrations', 'route' => route('admin.registrations'), 'active' => request()->routeIs('admin.registrations'), 'icon' => 'clipboard-check'],
             ['label' => 'Reports', 'route' => route('admin.reports.index'), 'active' => request()->routeIs('admin.reports.*'), 'icon' => 'bar-chart'],
-            ['label' => 'Users', 'route' => route('admin.students.create'), 'active' => request()->routeIs('admin.students.create'), 'icon' => 'users'],
         ];
     @endphp
 

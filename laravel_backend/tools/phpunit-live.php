@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $projectRoot = dirname(__DIR__);
-$phpunitBinary = $projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpunit';
+$phpunitBinary = $projectRoot.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin'.DIRECTORY_SEPARATOR.'phpunit';
 
 if (function_exists('ob_implicit_flush')) {
     ob_implicit_flush(true);
@@ -17,7 +17,7 @@ if (defined('STDERR') && function_exists('stream_set_write_buffer')) {
     @stream_set_write_buffer(STDERR, 0);
 }
 
-if (!file_exists($phpunitBinary)) {
+if (! file_exists($phpunitBinary)) {
     fwrite(STDERR, "Local PHPUnit binary was not found at vendor/bin/phpunit.\n");
     exit(1);
 }
@@ -60,7 +60,7 @@ $phpunitArgs = array_merge(
 $command = escapeshellarg(PHP_BINARY);
 
 foreach ($phpunitArgs as $arg) {
-    $command .= ' ' . escapeshellarg($arg);
+    $command .= ' '.escapeshellarg($arg);
 }
 
 $descriptorSpec = [
@@ -71,7 +71,7 @@ $descriptorSpec = [
 
 $process = proc_open($command, $descriptorSpec, $pipes, $projectRoot);
 
-if (!is_resource($process)) {
+if (! is_resource($process)) {
     fwrite(STDERR, "Unable to start PHPUnit process.\n");
     exit(1);
 }
@@ -135,7 +135,7 @@ $consumeEvents = static function (string &$buffer) use (&$statuses, $writeProgre
 $readAppendedEvents = static function () use ($eventsPath, &$eventsOffset, &$eventsBuffer, $consumeEvents): void {
     clearstatcache(true, $eventsPath);
 
-    if (!file_exists($eventsPath)) {
+    if (! file_exists($eventsPath)) {
         return;
     }
 
@@ -153,6 +153,7 @@ $readAppendedEvents = static function () use ($eventsPath, &$eventsOffset, &$eve
 
     if (fseek($handle, $eventsOffset) !== 0) {
         fclose($handle);
+
         return;
     }
 
@@ -221,12 +222,12 @@ if ($finalEvents !== false && strlen($finalEvents) > $eventsOffset) {
 $exitCode = proc_close($process);
 
 if ($printedAnyProgress) {
-    echo PHP_EOL . PHP_EOL;
+    echo PHP_EOL.PHP_EOL;
 }
 
-if (!file_exists($junitPath)) {
-    $message = trim($stderrBuffer . "\n" . $stdoutBuffer);
-    fwrite(STDERR, ($message !== '' ? $message : 'PHPUnit finished without producing a JUnit report.') . "\n");
+if (! file_exists($junitPath)) {
+    $message = trim($stderrBuffer."\n".$stdoutBuffer);
+    fwrite(STDERR, ($message !== '' ? $message : 'PHPUnit finished without producing a JUnit report.')."\n");
     exit($exitCode);
 }
 
@@ -281,12 +282,14 @@ foreach ($testCases as $testCase) {
     );
 
     if (isset($testCase->failure)) {
-        $failures[] = $signature . PHP_EOL . trim((string) $testCase->failure);
+        $failures[] = $signature.PHP_EOL.trim((string) $testCase->failure);
+
         continue;
     }
 
     if (isset($testCase->error)) {
-        $errors[] = $signature . PHP_EOL . trim((string) $testCase->error);
+        $errors[] = $signature.PHP_EOL.trim((string) $testCase->error);
+
         continue;
     }
 
@@ -296,43 +299,43 @@ foreach ($testCases as $testCase) {
 }
 
 if ($time !== null) {
-    echo 'Time: ' . number_format($time, 3) . 's' . PHP_EOL;
+    echo 'Time: '.number_format($time, 3).'s'.PHP_EOL;
 }
 
-$summary = 'Tests: ' . $tests;
+$summary = 'Tests: '.$tests;
 
 if ($assertions !== null) {
-    $summary .= ', Assertions: ' . $assertions;
+    $summary .= ', Assertions: '.$assertions;
 }
 
-echo $summary . PHP_EOL;
+echo $summary.PHP_EOL;
 
 if ($failures !== []) {
-    echo PHP_EOL . 'Failures:' . PHP_EOL;
+    echo PHP_EOL.'Failures:'.PHP_EOL;
 
     foreach ($failures as $index => $failure) {
-        echo ($index + 1) . '. ' . $failure . PHP_EOL . PHP_EOL;
+        echo ($index + 1).'. '.$failure.PHP_EOL.PHP_EOL;
     }
 }
 
 if ($errors !== []) {
-    echo PHP_EOL . 'Errors:' . PHP_EOL;
+    echo PHP_EOL.'Errors:'.PHP_EOL;
 
     foreach ($errors as $index => $error) {
-        echo ($index + 1) . '. ' . $error . PHP_EOL . PHP_EOL;
+        echo ($index + 1).'. '.$error.PHP_EOL.PHP_EOL;
     }
 }
 
 if ($skipped !== []) {
-    echo PHP_EOL . 'Skipped:' . PHP_EOL;
+    echo PHP_EOL.'Skipped:'.PHP_EOL;
 
     foreach ($skipped as $signature) {
-        echo '- ' . $signature . PHP_EOL;
+        echo '- '.$signature.PHP_EOL;
     }
 }
 
 if (trim($stderrBuffer) !== '') {
-    fwrite(STDERR, trim($stderrBuffer) . PHP_EOL);
+    fwrite(STDERR, trim($stderrBuffer).PHP_EOL);
 }
 
 @unlink($junitPath);

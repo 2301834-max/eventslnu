@@ -49,14 +49,16 @@ class AttendanceRecord extends Model
     public function checkout()
     {
         $this->checked_out_at = now();
+
         return $this->save();
     }
 
     public function getDurationInMinutes()
     {
-        if (!$this->checked_out_at) {
+        if (! $this->checked_out_at) {
             return null;
         }
+
         return $this->checked_in_at->diffInMinutes($this->checked_out_at);
     }
 }

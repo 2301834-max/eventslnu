@@ -91,7 +91,7 @@ class EventManagementApiTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('data.organization', 'Media Team')
-            ->assertJsonPath('data.event_image_url', url('storage/' . $response->json('data.event_image')));
+            ->assertJsonPath('data.event_image_url', url('storage/'.$response->json('data.event_image')));
 
         Storage::disk('public')->assertExists($response->json('data.event_image'));
     }
@@ -233,7 +233,7 @@ class EventManagementApiTest extends TestCase
         return Event::create([
             'title' => $title,
             'organization' => 'API Events Office',
-            'description' => $title . ' description',
+            'description' => $title.' description',
             'start_date' => now()->addDays(2),
             'end_date' => now()->addDays(2)->addHours(4),
             'location' => 'API Event Hall',

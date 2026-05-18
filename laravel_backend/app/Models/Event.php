@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -31,10 +31,16 @@ class Event extends Model
     ];
 
     protected $appends = [
+        'poster_url',
         'event_image_url',
         'capacity',
         'is_registration_open',
     ];
+
+    protected function serializeDate(DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     // Relationships
     public function creator()
@@ -104,6 +110,7 @@ class Event extends Model
             return 0;
         }
         $attended = $this->getAttendanceCount();
+
         return round(($attended / $approved) * 100, 2);
     }
 
@@ -112,24 +119,39 @@ class Event extends Model
         if ($this->max_participants === 0) {
             return false; // unlimited
         }
+
         return $this->getApprovedRegistrationsCount() >= $this->max_participants;
     }
 
     public function getEventImageUrlAttribute(): ?string
     {
-        if (!$this->event_image) {
-            return asset('images/event-placeholder.svg');
+        if (! $this->poster) {
+            return null;
         }
 
-        if (filter_var($this->event_image, FILTER_VALIDATE_URL)) {
-            return $this->event_image;
+        if (filter_var($this->poster, FILTER_VALIDATE_URL)) {
+            return $this->poster;
         }
 
-        if (!Storage::disk('public')->exists($this->event_image)) {
-            return asset('images/event-placeholder.svg');
+        return asset('storage/'.ltrim($this->poster, '/'));
+    }
+
+    public function getPosterAttribute($value): ?string
+    {
+        return $this->attributes['event_image'] ?? null;
+    }
+
+    public function getPosterUrlAttribute(): ?string
+    {
+        if (! $this->poster) {
+            return null;
         }
 
-        return asset('storage/' . ltrim($this->event_image, '/'));
+        if (filter_var($this->poster, FILTER_VALIDATE_URL)) {
+            return $this->poster;
+        }
+
+        return route('event-posters.show', ['path' => ltrim($this->poster, '/')]);
     }
 
     public function getCapacityAttribute(): int
@@ -148,7 +170,7 @@ class Event extends Model
             return false;
         }
 
-        return !$this->hasRegistrationClosed();
+        return ! $this->hasRegistrationClosed();
     }
 
     public function allowsAdminChanges(): bool

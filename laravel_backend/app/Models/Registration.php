@@ -73,6 +73,7 @@ class Registration extends Model
         $this->approved_by = $adminId;
         $this->approved_at = now();
         $this->remarks = $remarks;
+
         return $this->save();
     }
 
@@ -81,6 +82,7 @@ class Registration extends Model
         $this->status = 'rejected';
         $this->approved_by = $adminId;
         $this->remarks = $remarks;
+
         return $this->save();
     }
 
@@ -95,7 +97,7 @@ class Registration extends Model
             }
 
             do {
-                $candidate = 'REG-' . date('YmdHis') . '-' . rand(1000, 9999);
+                $candidate = 'REG-'.date('YmdHis').'-'.rand(1000, 9999);
             } while (self::where('registration_number', $candidate)->exists());
 
             $registration->registration_number = $candidate;

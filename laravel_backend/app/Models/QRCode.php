@@ -64,25 +64,28 @@ class QRCode extends Model
     {
         $this->status = 'scanned';
         $this->scanned_at = now();
+
         return $this->save();
     }
 
     public function isExpired()
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return false;
         }
+
         return $this->expires_at->isPast();
     }
 
     public function isActive()
     {
-        return $this->status === 'active' && !$this->isExpired();
+        return $this->status === 'active' && ! $this->isExpired();
     }
 
     public function revoke()
     {
         $this->status = 'revoked';
+
         return $this->save();
     }
 }

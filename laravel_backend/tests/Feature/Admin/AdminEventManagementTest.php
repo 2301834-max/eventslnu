@@ -62,15 +62,15 @@ class AdminEventManagementTest extends TestCase
 
         $response
             ->assertSee(route('admin.events.edit', $draft), false)
-            ->assertSee('<form method="POST" action="' . route('admin.events.destroy', $draft) . '"', false)
+            ->assertSee('<form method="POST" action="'.route('admin.events.destroy', $draft).'"', false)
             ->assertSee(route('admin.events.edit', $published), false)
-            ->assertSee('<form method="POST" action="' . route('admin.events.destroy', $published) . '"', false)
+            ->assertSee('<form method="POST" action="'.route('admin.events.destroy', $published).'"', false)
             ->assertDontSee(route('admin.events.edit', $ongoing), false)
-            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $ongoing) . '"', false)
+            ->assertDontSee('<form method="POST" action="'.route('admin.events.destroy', $ongoing).'"', false)
             ->assertDontSee(route('admin.events.edit', $completed), false)
-            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $completed) . '"', false)
+            ->assertDontSee('<form method="POST" action="'.route('admin.events.destroy', $completed).'"', false)
             ->assertDontSee(route('admin.events.edit', $cancelled), false)
-            ->assertDontSee('<form method="POST" action="' . route('admin.events.destroy', $cancelled) . '"', false);
+            ->assertDontSee('<form method="POST" action="'.route('admin.events.destroy', $cancelled).'"', false);
     }
 
     public function test_admin_cannot_edit_update_or_delete_view_only_event_statuses(): void
@@ -78,7 +78,7 @@ class AdminEventManagementTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         foreach (['ongoing', 'completed', 'cancelled'] as $status) {
-            $event = Event::create($this->eventData($admin, ucfirst($status) . ' Locked Event', $status));
+            $event = Event::create($this->eventData($admin, ucfirst($status).' Locked Event', $status));
 
             $this->actingAs($admin)
                 ->get(route('admin.events.edit', $event))
@@ -86,7 +86,7 @@ class AdminEventManagementTest extends TestCase
 
             $this->actingAs($admin)
                 ->put(route('admin.events.update', $event), array_merge(
-                    $this->eventData($admin, 'Updated ' . $status, 'published'),
+                    $this->eventData($admin, 'Updated '.$status, 'published'),
                     [
                         'start_date' => now()->addDays(4)->format('Y-m-d H:i:s'),
                         'end_date' => now()->addDays(5)->format('Y-m-d H:i:s'),
@@ -95,7 +95,7 @@ class AdminEventManagementTest extends TestCase
                 ->assertRedirect(route('admin.events.show', $event));
 
             $event->refresh();
-            $this->assertSame(ucfirst($status) . ' Locked Event', $event->title);
+            $this->assertSame(ucfirst($status).' Locked Event', $event->title);
             $this->assertSame($status, $event->status);
 
             $this->actingAs($admin)
@@ -208,7 +208,7 @@ class AdminEventManagementTest extends TestCase
         return [
             'title' => $title,
             'organization' => 'Student Affairs Office',
-            'description' => $title . ' description',
+            'description' => $title.' description',
             'start_date' => $start ?? now()->addDays(2),
             'end_date' => $end ?? now()->addDays(3),
             'location' => 'Admin Event Hall',

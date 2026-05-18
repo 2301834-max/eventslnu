@@ -167,24 +167,40 @@
                     </div>
 
                     <div>
-                        <label for="event_image" class="mb-2 block text-sm font-semibold text-slate-700">Event Poster</label>
+                        <label for="poster" class="mb-2 block text-sm font-semibold text-slate-700">Event Poster</label>
                         <div class="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
-                            <img
-                                id="eventImagePreview"
-                                src="{{ $event->event_image_url }}"
-                                alt="{{ $event->title }} poster"
-                                class="h-44 w-full rounded-xl object-cover"
-                            >
+                            <div class="flex h-44 w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-brand-700 via-brand-600 to-sky-500">
+                                @if($event->poster)
+                                    <img
+                                        id="eventImagePreview"
+                                        src="{{ $event->poster_url }}"
+                                        alt="{{ $event->title }} poster"
+                                        class="h-full w-full object-cover"
+                                        onerror="this.classList.add('hidden'); document.getElementById('eventImageFallback')?.classList.remove('hidden');"
+                                    >
+                                    <span id="eventImageFallback" class="hidden text-sm font-bold uppercase tracking-[0.25em] text-white">POSTER</span>
+                                @else
+                                    <img
+                                        id="eventImagePreview"
+                                        src=""
+                                        alt="{{ $event->title }} poster"
+                                        class="hidden h-full w-full object-cover"
+                                    >
+                                    <span id="eventImageFallback" class="text-sm font-bold uppercase tracking-[0.25em] text-white">POSTER</span>
+                                @endif
+                            </div>
                         </div>
                         <input
                             type="file"
-                            id="event_image"
-                            name="event_image"
+                            id="poster"
+                            name="poster"
                             accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                            class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('event_image') border-rose-400 @enderror"
+                            data-upload-url="{{ route('admin.events.poster.update', $event) }}"
+                            class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 @error('poster') border-rose-400 @enderror"
                         >
                         <p class="mt-2 text-xs text-slate-500">JPG, JPEG, PNG, or WEBP up to 20MB.</p>
-                        @error('event_image')
+                        <p id="eventImageStatus" class="mt-2 hidden text-sm font-semibold"></p>
+                        @error('poster')
                             <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -206,8 +222,11 @@
 <script>
     const editStartDateInput = document.getElementById('start_date');
     const editEndDateInput = document.getElementById('end_date');
-    const editEventImageInput = document.getElementById('event_image');
+    const editEventImageInput = document.getElementById('poster');
     const editEventImagePreview = document.getElementById('eventImagePreview');
+    const editEventImageFallback = document.getElementById('eventImageFallback');
+    const editEventImageStatus = document.getElementById('eventImageStatus');
+    const csrfToken = '{{ csrf_token() }}';
 
     if (editStartDateInput && editEndDateInput) {
         const syncEditEndDateMin = () => {
@@ -220,17 +239,59 @@
 
     if (editEventImageInput && editEventImagePreview) {
         const currentPoster = editEventImagePreview.src;
+        const setPosterStatus = (message, isError = false) => {
+            if (!editEventImageStatus) return;
 
-        editEventImageInput.addEventListener('change', () => {
+            editEventImageStatus.textContent = message;
+            editEventImageStatus.classList.remove('hidden', 'text-emerald-700', 'text-rose-600');
+            editEventImageStatus.classList.add(isError ? 'text-rose-600' : 'text-emerald-700');
+        };
+
+        editEventImageInput.addEventListener('change', async () => {
             const file = editEventImageInput.files?.[0];
 
             if (!file) {
                 editEventImagePreview.src = currentPoster;
+                editEventImageFallback?.classList.toggle('hidden', Boolean(currentPoster));
                 return;
             }
 
+            editEventImageFallback?.classList.add('hidden');
+            editEventImagePreview.classList.remove('hidden');
             editEventImagePreview.src = URL.createObjectURL(file);
             editEventImagePreview.onload = () => URL.revokeObjectURL(editEventImagePreview.src);
+
+            const uploadUrl = editEventImageInput.dataset.uploadUrl;
+            const formData = new FormData();
+            formData.append('poster', file);
+            setPosterStatus('Saving poster...');
+
+            try {
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: formData,
+                });
+                const payload = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const errors = payload.errors ? Object.values(payload.errors).flat() : [];
+                    throw new Error(errors[0] || payload.message || 'Poster upload failed.');
+                }
+
+                if (payload.poster_url) {
+                    editEventImagePreview.src = `${payload.poster_url}?v=${Date.now()}`;
+                    editEventImagePreview.classList.remove('hidden');
+                    editEventImageFallback?.classList.add('hidden');
+                }
+
+                setPosterStatus('Poster saved. This image will appear on admin and student event pages.');
+            } catch (error) {
+                setPosterStatus(error.message || 'Poster upload failed.', true);
+            }
         });
     }
 </script>

@@ -14,8 +14,8 @@ class RegisterApiTest extends TestCase
     {
         $response = $this->post('/api/register', [
             'name' => 'Test User',
-            'email' => 'test@lnu.edu.ph',
-            'student_id' => '2026-1101',
+            'email' => '2301101@lnu.edu.ph',
+            'student_id' => '2301101',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -25,8 +25,8 @@ class RegisterApiTest extends TestCase
                 'message' => 'User registered successfully',
                 'user' => [
                     'name' => 'Test User',
-                    'email' => 'test@lnu.edu.ph',
-                    'student_id' => '2026-1101',
+                    'email' => '2301101@lnu.edu.ph',
+                    'student_id' => '2301101',
                 ],
             ])
             ->assertJsonStructure([
@@ -36,8 +36,8 @@ class RegisterApiTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'test@lnu.edu.ph',
-            'student_id' => '2026-1101',
+            'email' => '2301101@lnu.edu.ph',
+            'student_id' => '2301101',
         ]);
     }
 
@@ -45,19 +45,19 @@ class RegisterApiTest extends TestCase
     {
         $response = $this->postJson('/api/register', [
             'name' => 'Mobile User',
-            'email' => 'MOBILE-USER@LNU.EDU.PH',
-            'studentId' => '2026-1103',
+            'email' => '2301103@LNU.EDU.PH',
+            'studentId' => '2301103',
             'password' => 'secret123',
             'confirmPassword' => 'secret123',
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('user.email', 'mobile-user@lnu.edu.ph')
-            ->assertJsonPath('user.student_id', '2026-1103');
+            ->assertJsonPath('user.email', '2301103@lnu.edu.ph')
+            ->assertJsonPath('user.student_id', '2301103');
 
         $this->assertDatabaseHas('users', [
-            'email' => 'mobile-user@lnu.edu.ph',
-            'student_id' => '2026-1103',
+            'email' => '2301103@lnu.edu.ph',
+            'student_id' => '2301103',
         ]);
     }
 
@@ -81,13 +81,13 @@ class RegisterApiTest extends TestCase
     public function test_api_register_rejects_duplicate_email(): void
     {
         User::factory()->create([
-            'email' => 'duplicate@lnu.edu.ph',
+            'email' => '2301104@lnu.edu.ph',
         ]);
 
         $response = $this->post('/api/register', [
             'name' => 'Another User',
-            'email' => 'duplicate@lnu.edu.ph',
-            'student_id' => '2026-1102',
+            'email' => '2301104@lnu.edu.ph',
+            'student_id' => '2301102',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -108,6 +108,6 @@ class RegisterApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email', 'student_id'])
-            ->assertJsonPath('errors.email.0', 'Please use your institutional email ending in @lnu.edu.ph.');
+            ->assertJsonPath('errors.email.0', 'Email must use your student number with @lnu.edu.ph, for example 2301360@lnu.edu.ph.');
     }
 }

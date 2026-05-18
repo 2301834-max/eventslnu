@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 $projectRoot = dirname(__DIR__);
-$phpunitBinary = $projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpunit';
+$phpunitBinary = $projectRoot.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin'.DIRECTORY_SEPARATOR.'phpunit';
 
-if (!file_exists($phpunitBinary)) {
+if (! file_exists($phpunitBinary)) {
     fwrite(STDERR, "Local PHPUnit binary was not found at vendor/bin/phpunit.\n");
     exit(1);
 }
@@ -34,7 +34,7 @@ $phpunitArgs = array_merge(
 $command = escapeshellarg(PHP_BINARY);
 
 foreach ($phpunitArgs as $arg) {
-    $command .= ' ' . escapeshellarg($arg);
+    $command .= ' '.escapeshellarg($arg);
 }
 
 $descriptorSpec = [
@@ -45,7 +45,7 @@ $descriptorSpec = [
 
 $process = proc_open($command, $descriptorSpec, $pipes, $projectRoot);
 
-if (!is_resource($process)) {
+if (! is_resource($process)) {
     fwrite(STDERR, "Unable to start PHPUnit process.\n");
     exit(1);
 }
@@ -58,9 +58,9 @@ fclose($pipes[2]);
 
 $exitCode = proc_close($process);
 
-if (!file_exists($junitPath)) {
-    $message = trim($stderr . "\n" . $stdout);
-    fwrite(STDERR, ($message !== '' ? $message : 'PHPUnit finished without producing a JUnit report.') . "\n");
+if (! file_exists($junitPath)) {
+    $message = trim($stderr."\n".$stdout);
+    fwrite(STDERR, ($message !== '' ? $message : 'PHPUnit finished without producing a JUnit report.')."\n");
     exit($exitCode);
 }
 
@@ -105,19 +105,22 @@ foreach ($testCases as $testCase) {
 
     if (isset($testCase->failure)) {
         $progress .= 'F';
-        $failures[] = $signature . PHP_EOL . trim((string) $testCase->failure);
+        $failures[] = $signature.PHP_EOL.trim((string) $testCase->failure);
+
         continue;
     }
 
     if (isset($testCase->error)) {
         $progress .= 'E';
-        $errors[] = $signature . PHP_EOL . trim((string) $testCase->error);
+        $errors[] = $signature.PHP_EOL.trim((string) $testCase->error);
+
         continue;
     }
 
     if (isset($testCase->skipped)) {
         $progress .= 'S';
         $skipped[] = $signature;
+
         continue;
     }
 
@@ -136,41 +139,41 @@ $tests = $topSuite ? (int) $topSuite['tests'] : count($testCases);
 $assertions = $topSuite && isset($topSuite['assertions']) ? (int) $topSuite['assertions'] : null;
 $time = $topSuite && isset($topSuite['time']) ? (float) $topSuite['time'] : null;
 
-echo $progress . PHP_EOL . PHP_EOL;
+echo $progress.PHP_EOL.PHP_EOL;
 
 if ($time !== null) {
-    echo 'Time: ' . number_format($time, 3) . 's' . PHP_EOL;
+    echo 'Time: '.number_format($time, 3).'s'.PHP_EOL;
 }
 
-$summary = 'Tests: ' . $tests;
+$summary = 'Tests: '.$tests;
 
 if ($assertions !== null) {
-    $summary .= ', Assertions: ' . $assertions;
+    $summary .= ', Assertions: '.$assertions;
 }
 
-echo $summary . PHP_EOL;
+echo $summary.PHP_EOL;
 
 if ($failures !== []) {
-    echo PHP_EOL . 'Failures:' . PHP_EOL;
+    echo PHP_EOL.'Failures:'.PHP_EOL;
 
     foreach ($failures as $index => $failure) {
-        echo ($index + 1) . '. ' . $failure . PHP_EOL . PHP_EOL;
+        echo ($index + 1).'. '.$failure.PHP_EOL.PHP_EOL;
     }
 }
 
 if ($errors !== []) {
-    echo PHP_EOL . 'Errors:' . PHP_EOL;
+    echo PHP_EOL.'Errors:'.PHP_EOL;
 
     foreach ($errors as $index => $error) {
-        echo ($index + 1) . '. ' . $error . PHP_EOL . PHP_EOL;
+        echo ($index + 1).'. '.$error.PHP_EOL.PHP_EOL;
     }
 }
 
 if ($skipped !== []) {
-    echo PHP_EOL . 'Skipped:' . PHP_EOL;
+    echo PHP_EOL.'Skipped:'.PHP_EOL;
 
     foreach ($skipped as $signature) {
-        echo '- ' . $signature . PHP_EOL;
+        echo '- '.$signature.PHP_EOL;
     }
 }
 

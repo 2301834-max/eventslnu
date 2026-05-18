@@ -2,8 +2,8 @@
 
 namespace Tests;
 
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -19,9 +19,9 @@ abstract class TestCase extends BaseTestCase
 
     protected function ensureTestingDatabaseExists(): void
     {
-        $databasePath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'testing.sqlite';
+        $databasePath = dirname(__DIR__).DIRECTORY_SEPARATOR.'database'.DIRECTORY_SEPARATOR.'testing.sqlite';
 
-        if (!file_exists($databasePath)) {
+        if (! file_exists($databasePath)) {
             touch($databasePath);
         }
     }

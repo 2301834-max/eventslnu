@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Event;
-use App\Models\AttendanceRecord;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Models\AttendanceRecord;
+use App\Models\Event;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
@@ -16,7 +15,7 @@ class ReportController extends Controller
      */
     public function exportAttendanceCSV(Event $event, Request $request)
     {
-        $fileName = 'attendance_' . $event->id . '_' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = 'attendance_'.$event->id.'_'.now()->format('Y-m-d_His').'.csv';
 
         $query = AttendanceRecord::where('event_id', $event->id)
             ->with('user', 'registration')
@@ -45,7 +44,7 @@ class ReportController extends Controller
                 'Check-Out Time',
                 'Duration (minutes)',
                 'Location',
-                'Attendance Status'
+                'Attendance Status',
             ]);
 
             // Data rows
@@ -59,7 +58,7 @@ class ReportController extends Controller
                     $record->checked_out_at?->format('Y-m-d H:i:s'),
                     $record->getDurationInMinutes() ?? 'N/A',
                     $record->check_in_location ?? 'N/A',
-                    $record->checked_out_at ? 'Checked Out' : 'Checked In'
+                    $record->checked_out_at ? 'Checked Out' : 'Checked In',
                 ]);
             }
 
@@ -75,7 +74,7 @@ class ReportController extends Controller
      */
     public function exportRegistrationsCSV(Event $event, Request $request)
     {
-        $fileName = 'registrations_' . $event->id . '_' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = 'registrations_'.$event->id.'_'.now()->format('Y-m-d_His').'.csv';
 
         $query = $event->registrations()
             ->with('user', 'approver')
@@ -101,7 +100,7 @@ class ReportController extends Controller
                 'Registration Date',
                 'Approved Date',
                 'Approved By',
-                'Remarks'
+                'Remarks',
             ]);
 
             // Data rows
@@ -115,7 +114,7 @@ class ReportController extends Controller
                     $reg->created_at->format('Y-m-d H:i:s'),
                     $reg->approved_at?->format('Y-m-d H:i:s') ?? 'N/A',
                     $reg->approver?->name ?? 'N/A',
-                    $reg->remarks ?? 'N/A'
+                    $reg->remarks ?? 'N/A',
                 ]);
             }
 
@@ -158,7 +157,7 @@ class ReportController extends Controller
             ],
             'attendance_summary' => [
                 'total_attended' => $totalAttended,
-                'attendance_rate' => $attendanceRate . '%',
+                'attendance_rate' => $attendanceRate.'%',
                 'currently_present' => $event->attendanceRecords()
                     ->whereNull('checked_out_at')
                     ->count(),
@@ -167,12 +166,12 @@ class ReportController extends Controller
             'event_details' => [
                 'max_capacity' => $event->max_participants,
                 'is_registration_full' => $event->isRegistrationFull(),
-            ]
+            ],
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $report
+            'data' => $report,
         ]);
     }
 
@@ -181,7 +180,7 @@ class ReportController extends Controller
      */
     public function exportLocationBreakdown(Event $event)
     {
-        $fileName = 'location_breakdown_' . $event->id . '_' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = 'location_breakdown_'.$event->id.'_'.now()->format('Y-m-d_His').'.csv';
 
         $locationData = AttendanceRecord::where('event_id', $event->id)
             ->with('user')
@@ -197,21 +196,21 @@ class ReportController extends Controller
                 'Event',
                 'Location',
                 'Count',
-                'Percentage'
+                'Percentage',
             ]);
 
-            $totalCount = $locationData->sum(fn($group) => $group->count());
+            $totalCount = $locationData->sum(fn ($group) => $group->count());
 
             // Data rows
             foreach ($locationData as $location => $records) {
                 $count = $records->count();
                 $percentage = $totalCount > 0 ? round(($count / $totalCount) * 100, 2) : 0;
-                
+
                 fputcsv($handle, [
                     $event->title,
                     $location ?? 'Not Specified',
                     $count,
-                    $percentage . '%'
+                    $percentage.'%',
                 ]);
             }
 
@@ -227,7 +226,7 @@ class ReportController extends Controller
      */
     public function exportNoShowReport(Event $event)
     {
-        $fileName = 'no_show_report_' . $event->id . '_' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = 'no_show_report_'.$event->id.'_'.now()->format('Y-m-d_His').'.csv';
 
         $noShows = $event->registrations()
             ->where('status', 'approved')
@@ -247,7 +246,7 @@ class ReportController extends Controller
                 'Registration Number',
                 'Registration Date',
                 'Approved Date',
-                'Approved By'
+                'Approved By',
             ]);
 
             // Data rows
@@ -259,7 +258,7 @@ class ReportController extends Controller
                     $reg->registration_number,
                     $reg->created_at->format('Y-m-d H:i:s'),
                     $reg->approved_at?->format('Y-m-d H:i:s') ?? 'N/A',
-                    $reg->approver?->name ?? 'N/A'
+                    $reg->approver?->name ?? 'N/A',
                 ]);
             }
 
@@ -275,7 +274,7 @@ class ReportController extends Controller
      */
     public function exportTimeAnalysis(Event $event)
     {
-        $fileName = 'time_analysis_' . $event->id . '_' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = 'time_analysis_'.$event->id.'_'.now()->format('Y-m-d_His').'.csv';
 
         $records = AttendanceRecord::where('event_id', $event->id)
             ->whereNotNull('checked_out_at')
@@ -295,7 +294,7 @@ class ReportController extends Controller
                 'Check-In Time',
                 'Check-Out Time',
                 'Duration (minutes)',
-                'Duration (formatted)'
+                'Duration (formatted)',
             ]);
 
             // Data rows
@@ -313,7 +312,7 @@ class ReportController extends Controller
                     $record->checked_in_at->format('H:i:s'),
                     $record->checked_out_at->format('H:i:s'),
                     $minutes,
-                    $formatted
+                    $formatted,
                 ]);
             }
 

@@ -11,13 +11,13 @@ class DebugController extends Controller
     {
         $sessionId = session()->getId();
         $csrfToken = csrf_token();
-        
+
         Log::info('GET CSRF Form', [
             'session_id' => $sessionId,
             'csrf_token' => $csrfToken,
             'timestamp' => now(),
         ]);
-        
+
         return view('debug-csrf-form', [
             'sessionId' => $sessionId,
             'csrfToken' => $csrfToken,
@@ -29,7 +29,7 @@ class DebugController extends Controller
         $sessionId = session()->getId();
         $receivedToken = $request->input('_token');
         $expectedToken = csrf_token();
-        
+
         Log::info('POST CSRF Test', [
             'session_id' => $sessionId,
             'received_token' => $receivedToken,
@@ -38,7 +38,7 @@ class DebugController extends Controller
             'session_data' => session()->all(),
             'timestamp' => now(),
         ]);
-        
+
         return response()->json([
             'message' => 'CSRF test received',
             'received_token' => $receivedToken,

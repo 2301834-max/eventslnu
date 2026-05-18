@@ -1,26 +1,26 @@
                                                                                                                                                                                                                                                                                                                                                                                                         <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Api\EventController;
-use App\Http\Controllers\Api\RegistrationController;
 use App\Http\Controllers\Api\AttendanceController;
-use App\Http\Controllers\Api\StatisticsController;
-use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QRCodeController;
 use App\Http\Controllers\Api\QRRegistrationController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\RegistrationController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\StatisticsController;
+use App\Http\Controllers\AuthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // Public authentication routes
 Route::post('/login', [AuthController::class, 'apiLogin']);
 Route::post('/register', [AuthController::class, 'apiRegister']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // API logout
     Route::post('/logout', [AuthController::class, 'apiLogout']);
-    
+
     /**
      * User Routes
      */
@@ -28,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/registrations/me', [RegistrationController::class, 'myHistory'])
+        ->name('registrations.my-history');
 
     /**
      * EVENTS MANAGEMENT
@@ -36,12 +38,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('events')->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('events.index');
         Route::post('/', [EventController::class, 'store'])->name('events.store');
-        
+
         Route::prefix('{event}')->group(function () {
             Route::get('/', [EventController::class, 'show'])->name('events.show');
             Route::put('/', [EventController::class, 'update'])->name('events.update');
             Route::delete('/', [EventController::class, 'destroy'])->name('events.destroy');
-            
+
             // Event status management
             Route::post('publish', [EventController::class, 'publish'])->name('events.publish');
             Route::post('start', [EventController::class, 'start'])->name('events.start');

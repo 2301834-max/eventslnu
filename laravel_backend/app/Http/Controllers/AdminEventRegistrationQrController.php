@@ -17,7 +17,7 @@ class AdminEventRegistrationQrController extends Controller
             ->where('status', 'active')
             ->update(['status' => 'revoked']);
 
-        $code = 'EVTREG|' . $event->id . '|' . Str::uuid()->toString();
+        $code = 'EVTREG|'.$event->id.'|'.Str::uuid()->toString();
 
         QRCode::create([
             'registration_id' => null,
@@ -33,4 +33,3 @@ class AdminEventRegistrationQrController extends Controller
             ->with('success', 'Event registration QR generated.');
     }
 }
-

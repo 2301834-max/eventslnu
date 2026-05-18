@@ -15,8 +15,8 @@ class WebAuthTest extends TestCase
     {
         $response = $this->post(route('register'), [
             'name' => 'Web Register User',
-            'email' => 'web-register@lnu.edu.ph',
-            'student_id' => '2026-1201',
+            'email' => '2301360@lnu.edu.ph',
+            'student_id' => '2301360',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -24,8 +24,8 @@ class WebAuthTest extends TestCase
         $response->assertRedirect(route('dashboard'));
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
-            'email' => 'web-register@lnu.edu.ph',
-            'student_id' => '2026-1201',
+            'email' => '2301360@lnu.edu.ph',
+            'student_id' => '2301360',
         ]);
     }
 
@@ -129,6 +129,18 @@ class WebAuthTest extends TestCase
         $response = $this->actingAs($user)->post(route('logout'));
 
         $response->assertRedirect('/');
+        $this->assertGuest();
+    }
+
+    public function test_authenticated_admin_is_redirected_to_admin_login_after_logout(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('logout'));
+
+        $response->assertRedirect(route('admin.login'));
         $this->assertGuest();
     }
 }

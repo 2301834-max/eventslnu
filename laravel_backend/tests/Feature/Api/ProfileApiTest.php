@@ -15,8 +15,8 @@ class ProfileApiTest extends TestCase
     {
         $student = User::factory()->create([
             'name' => 'Profile Student',
-            'email' => 'profile.student@lnu.edu.ph',
-            'student_id' => '2026-3301',
+            'email' => '2303301@lnu.edu.ph',
+            'student_id' => '2303301',
             'role' => 'student',
         ]);
 
@@ -28,8 +28,8 @@ class ProfileApiTest extends TestCase
                 'success' => true,
                 'data' => [
                     'name' => 'Profile Student',
-                    'email' => 'profile.student@lnu.edu.ph',
-                    'student_id' => '2026-3301',
+                    'email' => '2303301@lnu.edu.ph',
+                    'student_id' => '2303301',
                     'role' => 'student',
                 ],
             ]);

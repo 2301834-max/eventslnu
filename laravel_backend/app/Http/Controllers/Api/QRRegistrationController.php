@@ -22,14 +22,14 @@ class QRRegistrationController extends Controller
 
         $user = $request->user();
 
-        if (!$user?->hasInstitutionalEmail()) {
+        if (! $user?->hasInstitutionalEmail()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only institutional @lnu.edu.ph accounts may register for events.',
             ], 422);
         }
 
-        if (!$user->student_id) {
+        if (! $user->student_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'A student ID is required before using event registration QR codes.',
@@ -43,29 +43,29 @@ class QRRegistrationController extends Controller
             })
             ->first();
 
-        if (!$qr) {
+        if (! $qr) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid registration QR code.',
             ], 404);
         }
 
-        if (!$qr->isActive()) {
+        if (! $qr->isActive()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration QR is ' . ($qr->isExpired() ? 'expired' : 'inactive'),
+                'message' => 'Registration QR is '.($qr->isExpired() ? 'expired' : 'inactive'),
             ], 400);
         }
 
         $event = Event::find($qr->event_id);
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'success' => false,
                 'message' => 'Event not found.',
             ], 404);
         }
 
-        if (!$event->isOpenForRegistration()) {
+        if (! $event->isOpenForRegistration()) {
             return response()->json([
                 'success' => false,
                 'message' => $event->hasRegistrationClosed()
@@ -82,7 +82,7 @@ class QRRegistrationController extends Controller
         $approverId = $event->created_by ?: $user->id;
 
         if ($existing) {
-            if (!in_array($existing->status, ['rejected', 'cancelled'], true)) {
+            if (! in_array($existing->status, ['rejected', 'cancelled'], true)) {
                 if ($existing->status === 'pending') {
                     $existing->approve($approverId, 'Approved via QR scan');
                     $this->generateAttendanceQrCode($existing);
@@ -95,7 +95,7 @@ class QRRegistrationController extends Controller
                     ], 200);
                 }
 
-                if (!$existing->qrCode || !$existing->qrCode->isActive()) {
+                if (! $existing->qrCode || ! $existing->qrCode->isActive()) {
                     $this->generateAttendanceQrCode($existing);
                 }
 
@@ -146,7 +146,7 @@ class QRRegistrationController extends Controller
     {
         QRCode::where('registration_id', $registration->id)->delete();
 
-        $code = 'QR-' . $registration->event_id . '-' . $registration->id . '-' . md5($registration->id . time());
+        $code = 'QR-'.$registration->event_id.'-'.$registration->id.'-'.md5($registration->id.time());
 
         return QRCode::create([
             'registration_id' => $registration->id,

@@ -2,15 +2,31 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Event;
-use App\Models\Registration;
-use App\Models\QRCode;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use App\Models\QRCode;
+use App\Models\Registration;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
 {
+    /**
+     * Get the authenticated student's registration history with event details.
+     */
+    public function myHistory(Request $request): JsonResponse
+    {
+        $registrations = Registration::where('user_id', $request->user()->id)
+            ->with(['event', 'qrCode', 'attendanceRecord'])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $registrations,
+        ]);
+    }
+
     /**
      * Get the authenticated user's registration for an event (if any),
      * including QR code and attendance record.
@@ -64,7 +80,7 @@ class RegistrationController extends Controller
                 'per_page' => $registrations->perPage(),
                 'current_page' => $registrations->currentPage(),
                 'last_page' => $registrations->lastPage(),
-            ]
+            ],
         ]);
     }
 
@@ -81,14 +97,14 @@ class RegistrationController extends Controller
 
         $user = $request->user();
 
-        if (!$user?->hasInstitutionalEmail()) {
+        if (! $user?->hasInstitutionalEmail()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only institutional @lnu.edu.ph accounts may register for events.',
             ], 422);
         }
 
-        if (!$user->student_id) {
+        if (! $user->student_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your account does not have a student ID yet. Please update your profile first.',
@@ -102,12 +118,12 @@ class RegistrationController extends Controller
             ], 422);
         }
 
-        if (!$event->isOpenForRegistration()) {
+        if (! $event->isOpenForRegistration()) {
             return response()->json([
                 'success' => false,
                 'message' => $event->hasRegistrationClosed()
                     ? 'Event registration is already closed.'
-                    : 'Event is not open for registration'
+                    : 'Event is not open for registration',
             ], 400);
         }
 
@@ -119,10 +135,10 @@ class RegistrationController extends Controller
             ->first();
 
         if ($existing) {
-            if (!in_array($existing->status, ['rejected', 'cancelled'], true)) {
+            if (! in_array($existing->status, ['rejected', 'cancelled'], true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are already registered for this event'
+                    'message' => 'You are already registered for this event',
                 ], 400);
             }
 
@@ -146,7 +162,7 @@ class RegistrationController extends Controller
         if ($event->isRegistrationFull()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Event registration is full'
+                'message' => 'Event registration is full',
             ], 400);
         }
 
@@ -159,7 +175,7 @@ class RegistrationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Registration successful. Waiting for approval.',
-            'data' => $registration->load('user', 'event', 'qrCode')
+            'data' => $registration->load('user', 'event', 'qrCode'),
         ], 201);
     }
 
@@ -171,13 +187,13 @@ class RegistrationController extends Controller
         if ($registration->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration not found'
+                'message' => 'Registration not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $registration->load('user', 'approver', 'event', 'qrCode', 'attendanceRecord')
+            'data' => $registration->load('user', 'approver', 'event', 'qrCode', 'attendanceRecord'),
         ]);
     }
 
@@ -189,14 +205,14 @@ class RegistrationController extends Controller
         if ($registration->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration not found'
+                'message' => 'Registration not found',
             ], 404);
         }
 
         if ($registration->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only pending registrations can be approved'
+                'message' => 'Only pending registrations can be approved',
             ], 400);
         }
 
@@ -210,7 +226,7 @@ class RegistrationController extends Controller
             'success' => true,
             'message' => 'Registration approved successfully',
             'data' => $registration->load('user', 'approver'),
-            'qr_code' => $qrCode->only(['id', 'code', 'qr_image_data'])
+            'qr_code' => $qrCode->only(['id', 'code', 'qr_image_data']),
         ]);
     }
 
@@ -222,19 +238,19 @@ class RegistrationController extends Controller
         if ($registration->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration not found'
+                'message' => 'Registration not found',
             ], 404);
         }
 
         if ($registration->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only pending registrations can be rejected'
+                'message' => 'Only pending registrations can be rejected',
             ], 400);
         }
 
         $validated = $request->validate([
-            'remarks' => 'required|string'
+            'remarks' => 'required|string',
         ]);
 
         $registration->reject(auth()->id(), $validated['remarks']);
@@ -242,7 +258,7 @@ class RegistrationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Registration rejected successfully',
-            'data' => $registration->load('user', 'approver')
+            'data' => $registration->load('user', 'approver'),
         ]);
     }
 
@@ -254,14 +270,14 @@ class RegistrationController extends Controller
         if ($registration->event_id !== $event->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration not found'
+                'message' => 'Registration not found',
             ], 404);
         }
 
         if ($registration->status === 'cancelled') {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration is already cancelled'
+                'message' => 'Registration is already cancelled',
             ], 400);
         }
 
@@ -275,7 +291,7 @@ class RegistrationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Registration cancelled successfully',
-            'data' => $registration
+            'data' => $registration,
         ]);
     }
 
@@ -288,7 +304,7 @@ class RegistrationController extends Controller
         QRCode::where('registration_id', $registration->id)->delete();
 
         // Generate unique code
-        $code = 'QR-' . $registration->event_id . '-' . $registration->id . '-' . md5($registration->id . time());
+        $code = 'QR-'.$registration->event_id.'-'.$registration->id.'-'.md5($registration->id.time());
 
         // Create QR code entry (without image generation to avoid GD dependency)
         $qrCode = QRCode::create([
@@ -311,7 +327,7 @@ class RegistrationController extends Controller
         $validated = $request->validate([
             'registration_ids' => 'required|array',
             'registration_ids.*' => 'integer|exists:registrations,id',
-            'remarks' => 'nullable|string'
+            'remarks' => 'nullable|string',
         ]);
 
         $registrations = Registration::whereIn('id', $validated['registration_ids'])
@@ -329,7 +345,7 @@ class RegistrationController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$approved} registrations approved successfully",
-            'approved_count' => $approved
+            'approved_count' => $approved,
         ]);
     }
 }

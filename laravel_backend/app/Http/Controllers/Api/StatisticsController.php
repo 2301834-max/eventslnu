@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Event;
-use App\Models\AttendanceRecord;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceRecord;
+use App\Models\Event;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StatisticsController extends Controller
@@ -28,8 +28,8 @@ class StatisticsController extends Controller
     private function sqlDateExpression(): string
     {
         return DB::connection()->getDriverName() === 'sqlite'
-            ? "date(checked_in_at)"
-            : "DATE(checked_in_at)";
+            ? 'date(checked_in_at)'
+            : 'DATE(checked_in_at)';
     }
 
     /**
@@ -60,7 +60,7 @@ class StatisticsController extends Controller
 
         // Peak check-in time
         $peakTime = AttendanceRecord::where('event_id', $event->id)
-            ->selectRaw($this->sqlHourOnlyExpression() . " as hour, COUNT(*) as count")
+            ->selectRaw($this->sqlHourOnlyExpression().' as hour, COUNT(*) as count')
             ->groupBy('hour')
             ->orderBy('count', 'desc')
             ->first();
@@ -74,14 +74,14 @@ class StatisticsController extends Controller
                 'pending' => $pendingRegistrations,
                 'rejected' => $rejectedRegistrations,
                 'cancelled' => $event->registrations()->where('status', 'cancelled')->count(),
-                'rejection_rate' => $totalRegistrations > 0 
-                    ? round(($rejectedRegistrations / $totalRegistrations) * 100, 2) . '%'
+                'rejection_rate' => $totalRegistrations > 0
+                    ? round(($rejectedRegistrations / $totalRegistrations) * 100, 2).'%'
                     : '0%',
             ],
             'attendance_stats' => [
                 'total_attended' => $totalAttended,
                 'approved_count' => $approvedRegistrations,
-                'attendance_rate' => $attendanceRate . '%',
+                'attendance_rate' => $attendanceRate.'%',
                 'average_time_spent_minutes' => $avgTimeSpent,
                 'currently_present' => $event->attendanceRecords()
                     ->whereNull('checked_out_at')
@@ -91,10 +91,10 @@ class StatisticsController extends Controller
             'event_info' => [
                 'capacity' => $event->max_participants === 0 ? 'Unlimited' : $event->max_participants,
                 'is_full' => $event->isRegistrationFull(),
-                'available_slots' => $event->max_participants === 0 
+                'available_slots' => $event->max_participants === 0
                     ? 'Unlimited'
                     : max(0, $event->max_participants - $approvedRegistrations),
-            ]
+            ],
         ]);
     }
 
@@ -114,7 +114,7 @@ class StatisticsController extends Controller
         }
 
         $hourlyData = $query
-            ->selectRaw($this->sqlHourDateExpression() . " as hour, COUNT(*) as count")
+            ->selectRaw($this->sqlHourDateExpression().' as hour, COUNT(*) as count')
             ->groupBy('hour')
             ->orderBy('hour', 'asc')
             ->get();
@@ -122,7 +122,7 @@ class StatisticsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $hourlyData,
-            'total_records' => $hourlyData->sum('count')
+            'total_records' => $hourlyData->sum('count'),
         ]);
     }
 
@@ -142,7 +142,7 @@ class StatisticsController extends Controller
         }
 
         $dailyData = $query
-            ->selectRaw($this->sqlDateExpression() . " as date, COUNT(DISTINCT user_id) as count")
+            ->selectRaw($this->sqlDateExpression().' as date, COUNT(DISTINCT user_id) as count')
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
@@ -150,7 +150,7 @@ class StatisticsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $dailyData,
-            'total_unique_attendees' => $dailyData->sum('count')
+            'total_unique_attendees' => $dailyData->sum('count'),
         ]);
     }
 
@@ -160,7 +160,7 @@ class StatisticsController extends Controller
     public function locationStats(Event $event): JsonResponse
     {
         $locationData = AttendanceRecord::where('event_id', $event->id)
-            ->selectRaw("check_in_location, COUNT(*) as count")
+            ->selectRaw('check_in_location, COUNT(*) as count')
             ->whereNotNull('check_in_location')
             ->groupBy('check_in_location')
             ->orderBy('count', 'desc')
@@ -169,7 +169,7 @@ class StatisticsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $locationData,
-            'total_with_location' => $locationData->sum('count')
+            'total_with_location' => $locationData->sum('count'),
         ]);
     }
 
@@ -193,7 +193,7 @@ class StatisticsController extends Controller
                     'checked_in_at' => $record->checked_in_at,
                     'checked_out_at' => $record->checked_out_at,
                     'time_spent_minutes' => $record->getDurationInMinutes(),
-                    'location' => $record->check_in_location
+                    'location' => $record->check_in_location,
                 ];
             })
             ->sortByDesc('checked_in_at')
@@ -202,7 +202,7 @@ class StatisticsController extends Controller
         return response()->json([
             'success' => true,
             'data' => $patterns,
-            'total_attendance_records' => $patterns->count()
+            'total_attendance_records' => $patterns->count(),
         ]);
     }
 
@@ -233,8 +233,8 @@ class StatisticsController extends Controller
                 'attended' => $attended,
                 'not_attended' => $notAttended,
                 'attendance_rate' => $event->getApprovedRegistrationsCount() > 0
-                    ? round(($attended / $event->getApprovedRegistrationsCount()) * 100, 2) . '%'
-                    : '0%'
+                    ? round(($attended / $event->getApprovedRegistrationsCount()) * 100, 2).'%'
+                    : '0%',
             ],
             'details' => $registrations->map(function ($reg) {
                 return [
@@ -246,7 +246,7 @@ class StatisticsController extends Controller
                     'check_in_time' => $reg->attendanceRecord?->checked_in_at,
                     'check_out_time' => $reg->attendanceRecord?->checked_out_at,
                 ];
-            })->values()
+            })->values(),
         ]);
     }
 
@@ -256,7 +256,7 @@ class StatisticsController extends Controller
     public function realtimeMetrics(Event $event): JsonResponse
     {
         $now = now();
-        $isOngoing = $event->status === 'ongoing' || 
+        $isOngoing = $event->status === 'ongoing' ||
                      ($event->start_date <= $now && $event->end_date >= $now);
 
         return response()->json([
@@ -277,7 +277,7 @@ class StatisticsController extends Controller
                     ->where('checked_in_at', '>=', now()->subMinute())
                     ->count(),
             ],
-            'timestamp' => now()
+            'timestamp' => now(),
         ]);
     }
 
@@ -297,8 +297,8 @@ class StatisticsController extends Controller
             'summary' => [
                 'total_no_shows' => $noShows->count(),
                 'no_show_rate' => $event->getApprovedRegistrationsCount() > 0
-                    ? round(($noShows->count() / $event->getApprovedRegistrationsCount()) * 100, 2) . '%'
-                    : '0%'
+                    ? round(($noShows->count() / $event->getApprovedRegistrationsCount()) * 100, 2).'%'
+                    : '0%',
             ],
             'no_show_list' => $noShows->map(function ($reg) {
                 return [
@@ -307,9 +307,9 @@ class StatisticsController extends Controller
                     'user_email' => $reg->user->email,
                     'registration_number' => $reg->registration_number,
                     'approved_at' => $reg->approved_at,
-                    'approved_by' => $reg->approver?->name
+                    'approved_by' => $reg->approver?->name,
                 ];
-            })->values()
+            })->values(),
         ]);
     }
 }

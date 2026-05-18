@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\QRCode;
 use App\Models\Event;
+use App\Models\QRCode;
 use App\Models\Registration;
 use App\Models\User;
 use Carbon\Carbon;
