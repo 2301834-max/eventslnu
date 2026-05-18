@@ -41,6 +41,8 @@ flutter_frontend/
 
 # --- Environment Secrets ---
 .env*
+!.env.example
+!**/.env.example
 auth.json
 laravel_backend/database/testing.sqlite
 laravel_backend/database/testing.sqlite-*

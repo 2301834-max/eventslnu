@@ -1,0 +1,130 @@
+name: Laravel Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - pipeline
+      - codex/laravel-backend-only
+      - 'codex/**'
+    paths:
+      - '.github/workflows/backend-tests.yml'
+      - 'laravel_backend/**'
+  pull_request:
+    paths:
+      - '.github/workflows/backend-tests.yml'
+      - 'laravel_backend/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test and quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: laravel_backend
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+      APP_URL: http://localhost
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/testing.sqlite
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      BCRYPT_ROUNDS: 4
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, gd, mbstring, pcntl, pdo_mysql, pdo_sqlite, sqlite3, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-8.3-composer-${{ hashFiles('laravel_backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-8.3-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-scripts
+
+      - name: Detect Node asset pipeline
+        id: node
+        run: |
+          if [ -f package.json ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.node.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: laravel_backend/package-lock.json
+
+      - name: Install Node dependencies
+        if: steps.node.outputs.enabled == 'true'
+        run: npm ci
+
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+          mkdir -p database storage/framework/cache storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache
+          touch database/testing.sqlite
+          php artisan package:discover --ansi
+          php artisan config:clear --ansi
+          php artisan route:clear --ansi
+          php artisan view:clear --ansi
+
+      - name: Run database migrations
+        run: php artisan migrate --force --ansi
+
+      - name: Run Laravel Pint
+        run: php vendor/bin/pint --test
+
+      - name: Run dependency security audit
+        run: composer audit --locked
+
+      - name: Run PHPUnit test suite
+        run: php tools/phpunit-compact.php
+
+      - name: Build frontend assets
+        if: steps.node.outputs.enabled == 'true'
+        run: npm run build
+
+      - name: Upload backend logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-backend-logs
+          path: laravel_backend/storage/logs
+          if-no-files-found: ignore

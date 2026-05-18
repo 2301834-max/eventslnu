@@ -22,4 +22,4 @@ pipelines:
           - printf "APP_NAME=SmartEvent\nAPP_ENV=testing\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\nAPP_DEBUG=true\nAPP_URL=http://localhost\nDB_CONNECTION=sqlite\nDB_DATABASE=:memory:\nCACHE_STORE=array\nSESSION_DRIVER=array\nQUEUE_CONNECTION=sync\nMAIL_MAILER=array\n" > .env
           - php artisan package:discover --ansi
           - php artisan config:clear --ansi
-          - php scripts/run-phpunit-ci.php
+          - php tools/phpunit-compact.php

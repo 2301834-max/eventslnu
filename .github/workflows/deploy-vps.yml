@@ -1,0 +1,171 @@
+name: Laravel Backend VPS Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy. Leave blank for the selected branch.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-backend-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+
+    defaults:
+      run:
+        working-directory: laravel_backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, gd, mbstring, pcntl, pdo_mysql, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Install production Composer dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-scripts
+
+      - name: Detect Node asset pipeline
+        id: node
+        run: |
+          if [ -f package.json ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.node.outputs.enabled == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: laravel_backend/package-lock.json
+
+      - name: Build frontend assets
+        if: steps.node.outputs.enabled == 'true'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create release archive
+        run: |
+          tar \
+            --exclude='.env' \
+            --exclude='.git' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/testing/*' \
+            --exclude='storage/framework/views/*' \
+            -czf ../laravel-backend-release.tar.gz .
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_PRIVATE_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${VPS_PORT:-22}" "$VPS_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Upload release archive
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          test -n "$VPS_USER"
+          scp -i ~/.ssh/deploy_key -P "${VPS_PORT:-22}" ../laravel-backend-release.tar.gz "$VPS_USER@$VPS_HOST:/tmp/laravel-backend-${GITHUB_SHA}.tar.gz"
+
+      - name: Activate release on server
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+          VPS_PHP_BIN: ${{ secrets.VPS_PHP_BIN }}
+          VPS_RELOAD_COMMAND: ${{ secrets.VPS_RELOAD_COMMAND }}
+        run: |
+          test -n "$VPS_APP_PATH"
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
+            "GITHUB_SHA='$GITHUB_SHA' VPS_APP_PATH='$VPS_APP_PATH' VPS_PHP_BIN='${VPS_PHP_BIN:-php}' VPS_RELOAD_COMMAND='$VPS_RELOAD_COMMAND' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          APP_PATH="$VPS_APP_PATH"
+          PHP_BIN="${VPS_PHP_BIN:-php}"
+          RELEASE_PATH="$APP_PATH/releases/$GITHUB_SHA"
+          SHARED_PATH="$APP_PATH/shared"
+          ARCHIVE="/tmp/laravel-backend-$GITHUB_SHA.tar.gz"
+
+          mkdir -p "$APP_PATH/releases" "$SHARED_PATH/storage" "$SHARED_PATH/bootstrap-cache"
+          test -f "$SHARED_PATH/.env"
+
+          rm -rf "$RELEASE_PATH"
+          mkdir -p "$RELEASE_PATH"
+          tar -xzf "$ARCHIVE" -C "$RELEASE_PATH"
+          rm -f "$ARCHIVE"
+
+          rm -rf "$RELEASE_PATH/storage" "$RELEASE_PATH/bootstrap/cache"
+          ln -sfn "$SHARED_PATH/.env" "$RELEASE_PATH/.env"
+          ln -sfn "$SHARED_PATH/storage" "$RELEASE_PATH/storage"
+          ln -sfn "$SHARED_PATH/bootstrap-cache" "$RELEASE_PATH/bootstrap/cache"
+
+          mkdir -p \
+            "$SHARED_PATH/storage/app/public" \
+            "$SHARED_PATH/storage/framework/cache" \
+            "$SHARED_PATH/storage/framework/sessions" \
+            "$SHARED_PATH/storage/framework/views" \
+            "$SHARED_PATH/storage/logs"
+
+          cd "$RELEASE_PATH"
+          "$PHP_BIN" artisan package:discover --ansi
+          "$PHP_BIN" artisan optimize:clear --ansi
+          "$PHP_BIN" artisan migrate --force --ansi
+          "$PHP_BIN" artisan storage:link --ansi || true
+          "$PHP_BIN" artisan config:cache --ansi
+          "$PHP_BIN" artisan route:cache --ansi
+          "$PHP_BIN" artisan view:cache --ansi
+
+          ln -sfn "$RELEASE_PATH" "$APP_PATH/current"
+          cd "$APP_PATH/current"
+          "$PHP_BIN" artisan queue:restart --ansi || true
+
+          if [ -n "${VPS_RELOAD_COMMAND:-}" ]; then
+            bash -lc "$VPS_RELOAD_COMMAND"
+          fi
+
+          find "$APP_PATH/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+            | sort -rn \
+            | tail -n +6 \
+            | cut -d' ' -f2- \
+            | xargs -r rm -rf
+          REMOTE
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
