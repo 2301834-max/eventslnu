@@ -1,11 +1,16 @@
 enum UserRole { student, admin }
 
 abstract class AppUser {
-  AppUser({required this.email, required this.username, required String password})
-      : _password = password;
+  AppUser({
+    required this.email,
+    required this.username,
+    required String password,
+    this.studentId,
+  }) : _password = password;
 
   final String email;
   final String username;
+  final String? studentId;
   final String _password;
 
   UserRole get role;
@@ -18,6 +23,7 @@ class StudentUser extends AppUser {
     required super.email,
     required super.username,
     required super.password,
+    super.studentId,
   });
 
   @override
@@ -29,6 +35,7 @@ class AdminUser extends AppUser {
     required super.email,
     required super.username,
     required super.password,
+    super.studentId,
   });
 
   @override

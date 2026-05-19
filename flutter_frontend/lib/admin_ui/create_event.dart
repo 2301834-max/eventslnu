@@ -1,3 +1,8 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+
+import 'dart:html' as html;
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_event/core/service_locator.dart';
 import 'package:flutter_smart_event/theme/app_theme.dart';
@@ -18,6 +23,8 @@ class _CreateEventState extends State<CreateEvent> {
   final TextEditingController _capacityController = TextEditingController();
 
   DateTime? _selectedDate;
+  Uint8List? _posterBytes;
+  String? _posterFileName;
   bool _submitting = false;
 
   @override
@@ -86,15 +93,44 @@ class _CreateEventState extends State<CreateEvent> {
     }
   }
 
+  Future<void> _pickPoster() async {
+    final input = html.FileUploadInputElement()
+      ..accept = 'image/jpeg,image/png,image/webp'
+      ..click();
+
+    await input.onChange.first;
+    final hasNoFile = input.files?.isEmpty ?? true;
+    final file = hasNoFile ? null : input.files!.first;
+    if (file == null) return;
+
+    if (file.size > 20 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Poster must not be larger than 20MB.')),
+      );
+      return;
+    }
+
+    final reader = html.FileReader()..readAsArrayBuffer(file);
+    await reader.onLoad.first;
+    final result = reader.result;
+    if (result is! ByteBuffer) return;
+
+    setState(() {
+      _posterBytes = result.asUint8List();
+      _posterFileName = file.name;
+    });
+  }
+
   Future<void> _createEvent() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Date is required')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Date is required')));
       return;
     }
 
@@ -114,6 +150,8 @@ class _CreateEventState extends State<CreateEvent> {
         venue: _venueController.text.trim(),
         description: _descriptionController.text.trim(),
         capacity: capacity,
+        posterBytes: _posterBytes,
+        posterFileName: _posterFileName,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,9 +160,9 @@ class _CreateEventState extends State<CreateEvent> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -217,20 +255,90 @@ class _CreateEventState extends State<CreateEvent> {
                           height: 150,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
+                            color: const Color(0xFFF8FAFC),
+                            border: Border.all(
+                              color: _posterBytes == null
+                                  ? Colors.grey.shade300
+                                  : AppTheme.navy,
+                            ),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image, size: 40, color: Colors.grey),
-                                SizedBox(height: 10),
-                                Text('Upload Poster'),
-                              ],
-                            ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _submitting ? null : _pickPoster,
+                            child: _posterBytes == null
+                                ? const Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.add_photo_alternate_outlined,
+                                          size: 40,
+                                          color: AppTheme.muted,
+                                        ),
+                                        SizedBox(height: 10),
+                                        Text(
+                                          'Upload event poster',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'JPG, PNG, or WEBP up to 20MB',
+                                          style: TextStyle(
+                                            color: AppTheme.muted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(19),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Image.memory(
+                                          _posterBytes!,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        Positioned(
+                                          right: 10,
+                                          bottom: 10,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.64,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            child: const Text(
+                                              'Change poster',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                           ),
                         ),
+                        if (_posterFileName != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _posterFileName!,
+                            style: const TextStyle(color: AppTheme.muted),
+                          ),
+                        ],
                         const SizedBox(height: 30),
                         SizedBox(
                           width: double.infinity,
@@ -247,7 +355,9 @@ class _CreateEventState extends State<CreateEvent> {
                                 ? const SizedBox(
                                     height: 18,
                                     width: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text(
                                     'Create Event',

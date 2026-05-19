@@ -86,41 +86,42 @@ class _EventsListScreenState extends State<EventsListScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? _StateList(
-                    icon: Icons.cloud_off,
-                    title: 'Could not load events',
-                    message: _error!,
-                  )
-                : _events.isEmpty
-                    ? const _StateList(
-                        icon: Icons.event_busy,
-                        title: 'No events posted yet',
-                        message: 'Check again later for school activities.',
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _events.length + 1,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return _EventsHeader(count: _events.length);
-                          }
+            ? _StateList(
+                icon: Icons.cloud_off,
+                title: 'Could not load events',
+                message: _error!,
+              )
+            : _events.isEmpty
+            ? const _StateList(
+                icon: Icons.event_busy,
+                title: 'No events posted yet',
+                message: 'Check again later for school activities.',
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: _events.length + 1,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _EventsHeader(count: _events.length);
+                  }
 
-                          final event = _events[index - 1];
-                          return _EventCard(
-                            event: event,
-                            dateLabel: _dateLabel(event.startDate),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => EventDetailScreen(event: event),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+                  final event = _events[index - 1];
+                  return _EventCard(
+                    event: event,
+                    dateLabel: _dateLabel(event.startDate),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EventDetailScreen(event: event),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
       ),
     );
   }
@@ -191,6 +192,8 @@ class _EventCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _EventPoster(imageUrl: event.eventImageUrl),
+              if (_hasPoster(event.eventImageUrl)) const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
@@ -206,7 +209,10 @@ class _EventCard extends StatelessWidget {
               _MetaRow(icon: Icons.schedule, label: dateLabel),
               if (event.location.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                _MetaRow(icon: Icons.location_on_outlined, label: event.location),
+                _MetaRow(
+                  icon: Icons.location_on_outlined,
+                  label: event.location,
+                ),
               ],
               const SizedBox(height: 12),
               const Row(
@@ -226,6 +232,76 @@ class _EventCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  bool _hasPoster(String url) {
+    return url.trim().isNotEmpty && !url.contains('event-placeholder.svg');
+  }
+}
+
+class _EventPoster extends StatelessWidget {
+  const _EventPoster({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPoster =
+        imageUrl.trim().isNotEmpty &&
+        !imageUrl.contains('event-placeholder.svg');
+    if (!hasPoster) return const SizedBox.shrink();
+
+    return _NetworkPoster(imageUrl: imageUrl);
+  }
+}
+
+class _NetworkPoster extends StatefulWidget {
+  const _NetworkPoster({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  State<_NetworkPoster> createState() => _NetworkPosterState();
+}
+
+class _NetworkPosterState extends State<_NetworkPoster> {
+  bool _failed = false;
+
+  @override
+  void didUpdateWidget(covariant _NetworkPoster oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _failed = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final height = constraints.maxWidth >= 900 ? 220.0 : 160.0;
+
+          return SizedBox(
+            height: height,
+            width: double.infinity,
+            child: Image.network(
+              widget.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _failed = true);
+                });
+                return const SizedBox.shrink();
+              },
+            ),
+          );
+        },
       ),
     );
   }
@@ -270,10 +346,7 @@ class _MetaRow extends StatelessWidget {
         Icon(icon, size: 18, color: AppTheme.muted),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: AppTheme.muted),
-          ),
+          child: Text(label, style: const TextStyle(color: AppTheme.muted)),
         ),
       ],
     );

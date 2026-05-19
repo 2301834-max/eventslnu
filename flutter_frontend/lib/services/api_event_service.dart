@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_smart_event/api/api_client.dart';
 import 'package:flutter_smart_event/api/models/api_event.dart';
 
@@ -48,21 +50,31 @@ class ApiEventService {
     required String venue,
     required String description,
     required int capacity,
+    Uint8List? posterBytes,
+    String? posterFileName,
   }) async {
     final start = DateTime(date.year, date.month, date.day, 9);
     final end = DateTime(date.year, date.month, date.day, 17);
 
-    final json = await _api.postJson(
-      '/api/events',
-      body: {
-        'title': title,
-        'description': description,
-        'start_date': start.toIso8601String(),
-        'end_date': end.toIso8601String(),
-        'location': venue,
-        'max_participants': capacity,
-      },
-    );
+    final fields = {
+      'title': title,
+      'organization': 'LNU Smart Events',
+      'description': description,
+      'start_date': start.toIso8601String(),
+      'end_date': end.toIso8601String(),
+      'location': venue,
+      'max_participants': capacity.toString(),
+    };
+
+    final json = posterBytes == null || posterFileName == null
+        ? await _api.postJson('/api/events', body: fields)
+        : await _api.postMultipart(
+            '/api/events',
+            fields: fields,
+            fileField: 'event_image',
+            fileBytes: posterBytes,
+            fileName: posterFileName,
+          );
 
     final data = json['data'];
     if (data is! Map<String, dynamic>) {
@@ -71,4 +83,3 @@ class ApiEventService {
     return ApiEvent.fromJson(data);
   }
 }
-

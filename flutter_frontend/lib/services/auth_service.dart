@@ -34,6 +34,7 @@ class AuthService {
     required String email,
     required String username,
     required String password,
+    String? studentId,
   }) {
     final normalizedEmail = email.trim().toLowerCase();
     final normalizedUsername = username.trim().toLowerCase();
@@ -55,6 +56,7 @@ class AuthService {
       email: email.trim(),
       username: username.trim(),
       password: password,
+      studentId: studentId?.trim(),
     );
 
     _repository.addUser(user);

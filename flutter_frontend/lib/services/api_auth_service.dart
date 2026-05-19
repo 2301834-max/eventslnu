@@ -15,10 +15,7 @@ class ApiAuthService {
     final json = await _api.postJson(
       '/api/login',
       auth: false,
-      body: {
-        'email': email,
-        'password': password,
-      },
+      body: {'email': email, 'password': password},
     );
 
     final token = (json['token'] ?? '').toString();
@@ -44,23 +41,23 @@ class ApiAuthService {
     required String name,
     required String email,
     required String password,
+    required String passwordConfirmation,
+    String? studentId,
   }) async {
-    await _api.postJson(
-      '/api/register',
-      auth: false,
-      body: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': password,
-      },
-    );
+    final body = {
+      'name': name,
+      'email': email,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    };
+    if (studentId != null) {
+      body['student_id'] = studentId;
+    }
+    await _api.postJson('/api/register', auth: false, body: body);
   }
 
   Future<ApiUser> getMe() async {
     final json = await _api.getJson('/api/user');
-    final userJson = json is Map<String, dynamic> ? json : <String, dynamic>{};
-    return ApiUser.fromJson(userJson);
+    return ApiUser.fromJson(json);
   }
 }
-

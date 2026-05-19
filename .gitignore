@@ -1,0 +1,21 @@
+# Local tooling
+.agents/
+.codex/
+.vscode/
+flutter/
+
+# Flutter/Dart generated files
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
+**/.packages
+
+# Android/Gradle generated files
+**/.gradle/
+**/.kotlin/
+**/local.properties
+
+# IDE/system files
+.DS_Store
+Thumbs.db

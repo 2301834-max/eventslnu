@@ -17,7 +17,8 @@ class ServiceLocator {
   late final ApiAuthService authService = ApiAuthService(apiClient, tokenStore);
   late final ApiEventService eventService = ApiEventService(apiClient);
   late final ApiRegistrationService registrationService =
-      ApiRegistrationService(apiClient);
-  late final ApiAttendanceService attendanceService =
-      ApiAttendanceService(apiClient);
+      ApiRegistrationService(apiClient, authService);
+  late final ApiAttendanceService attendanceService = ApiAttendanceService(
+    apiClient,
+  );
 }
